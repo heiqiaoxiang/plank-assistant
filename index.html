@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="专注、高效的平板支撑训练助手">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏋️</text></svg>">
+  <title>Plank - 平板支撑助手</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <header class="header">
+      <button class="mode-btn" id="modeBtn" aria-label="选择模式">
+        <span class="mode-icon">◎</span>
+        <span class="mode-text" id="modeText">经典平板支撑</span>
+      </button>
+    </header>
+
+    <main class="main">
+      <div class="breath-container" id="breathContainer">
+        <div class="breath-ring"></div>
+        <div class="timer-display" id="timerDisplay">60</div>
+        <div class="breath-text" id="breathText">准备开始</div>
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-secondary" id="resetBtn" aria-label="重置">↺</button>
+        <button class="btn btn-primary" id="startBtn" aria-label="开始">开始</button>
+      </div>
+
+      <div class="presets">
+        <button class="preset" data-time="30">30s</button>
+        <button class="preset active" data-time="60">60s</button>
+        <button class="preset" data-time="90">90s</button>
+        <button class="preset" data-time="120">2min</button>
+        <button class="preset" data-time="custom">自定义</button>
+      </div>
+
+      <div class="stats" id="statsPanel">
+        <div class="stat-item">
+          <span class="stat-value" id="todayCount">0</span>
+          <span class="stat-label">今日</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="weekCount">0</span>
+          <span class="stat-label">本周</span>
+        </div>
+        <div class="stat-item stat-clickable">
+          <span class="stat-value" id="totalTime">0m</span>
+          <span class="stat-label">总时长</span>
+        </div>
+      </div>
+    </main>
+
+    <div class="mode-selector" id="modeSelector">
+      <div class="mode-option" data-mode="classic">
+        <span class="mode-emoji">🧘</span>
+        <span>经典平板支撑</span>
+      </div>
+      <div class="mode-option" data-mode="side-left">
+        <span class="mode-emoji">🙃</span>
+        <span>左侧平板支撑</span>
+      </div>
+      <div class="mode-option" data-mode="side-right">
+        <span class="mode-emoji">🤪</span>
+        <span>右侧平板支撑</span>
+      </div>
+      <div class="mode-option" data-mode="mountain">
+        <span class="mode-emoji">🏔️</span>
+        <span>登山者</span>
+      </div>
+    </div>
+
+    <div class="custom-time-modal" id="customModal">
+      <div class="modal-content">
+        <h3>设置时长</h3>
+        <div class="custom-input-group">
+          <input type="number" id="customTimeInput" min="10" max="600" value="60">
+          <span>秒</span>
+        </div>
+        <div class="modal-buttons">
+          <button class="btn btn-secondary" id="cancelCustom">取消</button>
+          <button class="btn btn-primary" id="confirmCustom">确认</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="completion-overlay" id="completionOverlay">
+      <div class="completion-content">
+        <div class="confetti" id="confetti"></div>
+        <div class="completion-icon">🎉</div>
+        <div class="completion-time" id="completionTime">60秒</div>
+        <div class="completion-stats" id="completionStats">完美完成 🎯</div>
+        <div class="completion-message" id="completionMessage">太棒了！继续保持！</div>
+        <button class="btn btn-primary" id="doneBtn">完成</button>
+      </div>
+    </div>
+
+    <div class="history-overlay" id="historyOverlay">
+      <div class="history-content">
+        <div class="history-header">
+          <h3>训练记录</h3>
+          <button class="history-close" id="historyClose">×</button>
+        </div>
+        <div class="history-list" id="historyList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
