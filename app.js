@@ -1,5 +1,4 @@
-const STORAGE_KEY = 'plank_assistant_data';
-const BREATH_CYCLE = 10000;
+import { supabase, STORAGE_KEY } from './supabase.js';
 const INHALE_TIME = 4000;
 const HOLD_TIME = 2000;
 const EXHALE_TIME = 4000;
@@ -55,12 +54,129 @@ class PlankApp {
     };
 
     this.audioContext = null;
+    this.userId = null;
     this.data = this.loadData();
+    this.syncPending = this.loadPendingSync();
 
     this.initElements();
     this.bindEvents();
     this.updateStats();
     this.renderModeSelector();
+
+    this.initSupabase();
+  }
+
+  loadPendingSync() {
+    try {
+      const stored = localStorage.getItem('plank_pending_sync');
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  savePendingSync() {
+    try {
+      localStorage.setItem('plank_pending_sync', JSON.stringify(this.syncPending));
+    } catch (e) {}
+  }
+
+  async initSupabase() {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (session?.user) {
+        this.userId = session.user.id;
+        await this.syncPendingSessions();
+        await this.mergeCloudStats();
+      } else {
+        await this.signInAnonymously();
+      }
+
+      supabase.auth.onAuthStateChange(async (event, session) => {
+        if (session?.user) {
+          this.userId = session.user.id;
+          await this.syncPendingSessions();
+          await this.mergeCloudStats();
+        }
+      });
+
+      window.addEventListener('online', () => {
+        this.syncPendingSessions();
+        this.mergeCloudStats();
+      });
+    } catch (err) {
+      console.warn('Supabase init failed (offline mode):', err.message);
+    }
+  }
+
+  async signInAnonymously() {
+    try {
+      const { data, error } = await supabase.auth.signInAnonymously();
+      if (error) throw error;
+      this.userId = data.user.id;
+    } catch (err) {
+      console.warn('Anonymous sign-in failed:', err.message);
+    }
+  }
+
+  async syncPendingSessions() {
+    if (!this.userId || !navigator.onLine || this.syncPending.length === 0) return;
+
+    const toSync = [...this.syncPending];
+    for (const session of toSync) {
+      try {
+        const { error } = await supabase.from('sessions').insert({
+          user_id: session.userId || this.userId,
+          duration: session.duration,
+          mode: session.mode,
+          paused_count: session.pausedCount
+        });
+        if (!error) {
+          this.syncPending = this.syncPending.filter(s => s.date !== session.date);
+        }
+      } catch (err) {
+        console.warn('Sync failed for session:', err.message);
+      }
+    }
+    this.savePendingSync();
+  }
+
+  async syncSessionToCloud(sessionData) {
+    if (!this.userId) return;
+
+    try {
+      const { error } = await supabase.from('sessions').insert({
+        user_id: this.userId,
+        duration: sessionData.duration,
+        mode: sessionData.mode,
+        paused_count: sessionData.pausedCount
+      });
+      if (error) throw error;
+    } catch (err) {
+      this.syncPending.push({ ...sessionData, userId: this.userId });
+      this.savePendingSync();
+    }
+  }
+
+  async mergeCloudStats() {
+    if (!this.userId || !navigator.onLine) return;
+
+    try {
+      const { data, error } = await supabase.rpc('get_user_stats', { p_user_id: this.userId });
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const cloudStats = data[0];
+        if (cloudStats.total_sessions > this.data.history?.length) {
+          this.data.todayCount = cloudStats.today_count || 0;
+          this.data.totalTime = cloudStats.total_duration || 0;
+          this.saveData();
+          this.updateStats();
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to merge cloud stats:', err.message);
+    }
   }
 
   initElements() {
@@ -504,6 +620,13 @@ class PlankApp {
     }
     this.saveData();
     this.updateStats();
+
+    this.syncSessionToCloud({
+      date: new Date().toISOString(),
+      duration: completedTime,
+      mode: this.state.mode,
+      pausedCount
+    });
 
     this.els.completionTime.textContent = `${completedTime}秒`;
     this.els.completionMessage.textContent = completionMessages[Math.floor(Math.random() * completionMessages.length)];
