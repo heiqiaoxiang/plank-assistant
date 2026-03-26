@@ -63,6 +63,30 @@
 - [x] 添加到主屏幕提示
 - [x] 离线支持
 
+### Phase 4: AI 姿态检测 (MediaPipe)
+- [ ] 集成 MediaPipe Pose Landmarker
+  - 加载 BlazePose 模型 (33个关键点)
+  - 实时相机画面姿态检测
+  - 骨骼叠加可视化渲染
+- [ ] 平板支撑姿势判断算法
+  - 肩部-臀部-脚踝角度计算
+  - 塌腰检测 (臀部位置判断)
+  - 姿势正确性百分比评分
+- [ ] 实时姿势反馈 UI
+  - 姿势正确/错误状态显示
+  - 骨骼叠加层 (半透明)
+  - 语音/文字姿势纠正提示
+- [ ] 性能优化
+  - Web Worker 后台处理
+  - 帧率控制 (30fps 足够)
+  - 低端设备适配
+
+### Phase 5: 增强功能 (可选)
+- [ ] 侧平板支撑模式姿态检测
+- [ ] 登山者模式姿态检测
+- [ ] 训练姿态历史记录
+- [ ] 姿态稳定性评分
+
 ---
 
 ## 技术栈
@@ -70,3 +94,9 @@
 - Web Audio API (音频)
 - LocalStorage (持久化)
 - CSS Animations (动画)
+- MediaPipe Pose Landmarker (姿态检测)
+
+## 待加入技术
+- `@mediapipe/tasks-vision` - Web 姿态检测库
+- Web Worker - 后台处理避免主线程阻塞
+- Canvas 2D - 骨骼叠加渲染
