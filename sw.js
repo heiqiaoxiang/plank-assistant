@@ -1,10 +1,10 @@
 const CACHE_NAME = 'plank-assistant-v1';
 const urlsToCache = [
-  '/plank-assistant/',
-  '/plank-assistant/index.html',
-  '/plank-assistant/styles.css',
-  '/plank-assistant/app.js',
-  '/plank-assistant/manifest.json'
+  '/',
+  '/index.html',
+  '/styles.css',
+  '/app.js',
+  '/manifest.json'
 ];
 
 self.addEventListener('install', (event) => {

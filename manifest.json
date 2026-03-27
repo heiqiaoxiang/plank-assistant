@@ -2,7 +2,7 @@
   "name": "Plank - 平板支撑助手",
   "short_name": "Plank",
   "description": "专注、高效的平板支撑训练助手",
-  "start_url": "/plank-assistant/",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#0a0a0a",
