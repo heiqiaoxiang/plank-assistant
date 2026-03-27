@@ -82,6 +82,11 @@ class PlankApp {
   }
 
   async initSupabase() {
+    if (!supabase) {
+      console.log('[App] Supabase not configured, local-only mode');
+      return;
+    }
+
     try {
       const { data: { session }, error } = await supabase.auth.getSession();
       if (session?.user) {
@@ -207,7 +212,8 @@ class PlankApp {
       historyOverlay: document.getElementById('historyOverlay'),
       historyList: document.getElementById('historyList'),
       historyClose: document.getElementById('historyClose'),
-      statsPanel: document.getElementById('statsPanel')
+      statsPanel: document.getElementById('statsPanel'),
+      leaderboardList: document.getElementById('leaderboardList')
     };
   }
 
@@ -260,6 +266,30 @@ class PlankApp {
       if (e.target === this.els.historyOverlay) {
         this.hideHistory();
       }
+    });
+
+    document.querySelectorAll('.history-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.history-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const tabName = tab.dataset.tab;
+        if (tabName === 'history') {
+          this.els.historyList.style.display = 'block';
+          this.els.leaderboardList.style.display = 'none';
+        } else {
+          this.els.historyList.style.display = 'none';
+          this.els.leaderboardList.style.display = 'block';
+          this.loadLeaderboard();
+        }
+      });
+    });
+
+    document.querySelectorAll('.leaderboard-type-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.leaderboard-type-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.loadLeaderboard(btn.dataset.type);
+      });
     });
   }
 
@@ -657,6 +687,58 @@ class PlankApp {
 
   hideHistory() {
     this.els.historyOverlay.classList.remove('show');
+  }
+
+  async loadLeaderboard(type = 'total_duration') {
+    if (!window.getLeaderboard) {
+      this.els.leaderboardList.innerHTML = '<div class="leaderboard-empty">排行榜暂不可用</div>';
+      return;
+    }
+
+    const { data, error } = await window.getLeaderboard(type, 20);
+
+    if (error || !data || data.length === 0) {
+      this.els.leaderboardList.innerHTML = '<div class="leaderboard-empty">暂无排行数据</div>';
+      return;
+    }
+
+    const typeLabels = {
+      'total_duration': '总时长',
+      'total_sessions': '总次数',
+      'week_duration': '本周时长'
+    };
+
+    this.els.leaderboardList.innerHTML = `
+      <div class="leaderboard-type-selector">
+        <button class="leaderboard-type-btn ${type === 'total_duration' ? 'active' : ''}" data-type="total_duration">总时长</button>
+        <button class="leaderboard-type-btn ${type === 'total_sessions' ? 'active' : ''}" data-type="total_sessions">总次数</button>
+        <button class="leaderboard-type-btn ${type === 'week_duration' ? 'active' : ''}" data-type="week_duration">本周</button>
+      </div>
+      ${data.map((item, index) => {
+        const rankClass = index < 3 ? `top-${index + 1}` : '';
+        const nickname = item.profiles?.nickname || '健身达人';
+        const value = item.rank_value;
+        const displayValue = type === 'total_sessions' ? `${value}次` : `${Math.floor(value / 60)}m`;
+
+        return `
+          <div class="leaderboard-item">
+            <div class="leaderboard-rank ${rankClass}">${index + 1}</div>
+            <div class="leaderboard-info">
+              <div class="leaderboard-nickname">${nickname}</div>
+            </div>
+            <div class="leaderboard-value">${displayValue}</div>
+          </div>
+        `;
+      }).join('')}
+    `;
+
+    document.querySelectorAll('.leaderboard-type-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.leaderboard-type-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.loadLeaderboard(btn.dataset.type);
+      });
+    });
   }
 
   renderHistory() {

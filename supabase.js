@@ -1,15 +1,17 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const SUPABASE_URL = 'https://lvpotadtfhqunpibfhwy.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_q01svXqt_TSip57lmUMdMw_O58NJg2L';
+const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    persistSession: true,
-    storageKey: 'plank_supabase_session',
-    autoRefreshToken: true
-  }
-});
+export const supabase = SUPABASE_URL && SUPABASE_ANON_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: true,
+        storageKey: 'plank_supabase_session',
+        autoRefreshToken: true
+      }
+    })
+  : null;
 
 export const STORAGE_KEY = 'plank_assistant_data';
 export const SYNC_KEY = 'plank_last_sync';

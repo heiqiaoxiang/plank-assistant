@@ -104,14 +104,21 @@
     <div class="history-overlay" id="historyOverlay">
       <div class="history-content">
         <div class="history-header">
-          <h3>训练记录</h3>
+          <div class="history-tabs">
+            <button class="history-tab active" data-tab="history">训练记录</button>
+            <button class="history-tab" data-tab="leaderboard">排行榜</button>
+          </div>
           <button class="history-close" id="historyClose">×</button>
         </div>
         <div class="history-list" id="historyList"></div>
+        <div class="leaderboard-list" id="leaderboardList" style="display:none;"></div>
       </div>
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script type="module" src="supabaseClient.js"></script>
+  <script type="module" src="auth.js"></script>
+  <script type="module" src="database.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
