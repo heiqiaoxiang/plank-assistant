@@ -2,6 +2,7 @@ import { supabase, STORAGE_KEY } from './supabase.js';
 const INHALE_TIME = 4000;
 const HOLD_TIME = 2000;
 const EXHALE_TIME = 4000;
+const PROGRESS_RING_CIRCUMFERENCE = 2 * Math.PI * 135;
 
 const modeNames = {
   classic: '经典平板支撑',
@@ -50,7 +51,8 @@ class PlankApp {
       pausedIntervals: [],
       totalPausedTime: 0,
       checkpointTimeoutIds: [],
-      encouragementIntervalId: null
+      encouragementIntervalId: null,
+      autoCloseTimeout: null
     };
 
     this.audioContext = null;
@@ -213,7 +215,9 @@ class PlankApp {
       historyList: document.getElementById('historyList'),
       historyClose: document.getElementById('historyClose'),
       statsPanel: document.getElementById('statsPanel'),
-      leaderboardList: document.getElementById('leaderboardList')
+      leaderboardList: document.getElementById('leaderboardList'),
+      progressRingFill: document.getElementById('progressRingFill'),
+      pauseIndicator: document.getElementById('pauseIndicator')
     };
   }
 
@@ -433,11 +437,14 @@ class PlankApp {
     this.state.isRunning = true;
     this.els.startBtn.textContent = '暂停';
     this.els.timerDisplay.classList.add('running');
+    this.els.pauseIndicator.classList.remove('show');
+    this.els.progressRingFill.classList.remove('paused');
 
     this.startBreathCycle();
     this.startCountdown();
     this.scheduleCheckpoints();
     this.startEncouragement();
+    this.updateProgressRing();
   }
 
   pause() {
@@ -445,6 +452,8 @@ class PlankApp {
     this.state.isPaused = true;
     this.state.pauseStartTime = Date.now();
     this.els.startBtn.textContent = '继续';
+    this.els.pauseIndicator.classList.add('show');
+    this.els.progressRingFill.classList.add('paused');
 
     clearInterval(this.state.intervalId);
     clearTimeout(this.state.breathTimeoutId);
@@ -471,6 +480,9 @@ class PlankApp {
     this.els.startBtn.textContent = '开始';
     this.els.timerDisplay.classList.remove('running', 'warning');
     this.els.breathText.textContent = '准备开始';
+    this.els.pauseIndicator.classList.remove('show');
+    this.els.progressRingFill.classList.remove('paused', 'warning');
+    this.updateProgressRing();
     this.updateDisplay();
   }
 
@@ -478,9 +490,11 @@ class PlankApp {
     this.state.intervalId = setInterval(() => {
       this.state.timeLeft--;
       this.updateDisplay();
+      this.updateProgressRing();
 
       if (this.state.timeLeft <= 10 && this.state.timeLeft > 0) {
         this.els.timerDisplay.classList.add('warning');
+        this.els.progressRingFill.classList.add('warning');
         this.playTickSound();
       }
 
@@ -488,6 +502,12 @@ class PlankApp {
         this.complete();
       }
     }, 1000);
+  }
+
+  updateProgressRing() {
+    const progress = this.state.timeLeft / this.state.duration;
+    const offset = PROGRESS_RING_CIRCUMFERENCE * (1 - progress);
+    this.els.progressRingFill.style.strokeDashoffset = offset;
   }
 
   updateDisplay() {
@@ -499,7 +519,7 @@ class PlankApp {
       if (!this.state.isRunning) return;
 
       this.setBreathPhase('inhale', '吸气...');
-      this.els.breathRing.classList.add('inhale');
+      this.animateBreathRing(1, 1.2, INHALE_TIME, 'ease-in-out');
 
       this.state.breathTimeoutId = setTimeout(() => {
         if (!this.state.isRunning) return;
@@ -508,7 +528,7 @@ class PlankApp {
         this.state.breathTimeoutId = setTimeout(() => {
           if (!this.state.isRunning) return;
           this.setBreathPhase('exhale', '呼气...');
-          this.els.breathRing.classList.remove('inhale');
+          this.animateBreathRing(1.2, 1, EXHALE_TIME, 'ease-in-out');
 
           this.state.breathTimeoutId = setTimeout(() => {
             if (!this.state.isRunning) return;
@@ -522,6 +542,30 @@ class PlankApp {
     breathe();
   }
 
+  animateBreathRing(from, to, duration, easing) {
+    const startTime = performance.now();
+    const el = this.els.breathRing;
+
+    const easeInOut = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+    const animate = (currentTime) => {
+      if (!this.state.isRunning) return;
+
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easedProgress = easing === 'ease-in-out' ? easeInOut(progress) : progress;
+      const scale = from + (to - from) * easedProgress;
+
+      el.style.transform = `scale(${scale})`;
+
+      if (progress < 1 && this.state.isRunning) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }
+
   setBreathPhase(phase, text) {
     this.state.breathPhase = phase;
     this.els.breathText.textContent = text;
@@ -529,6 +573,8 @@ class PlankApp {
 
   stopBreathCycle() {
     this.els.breathRing.classList.remove('inhale');
+    this.els.breathRing.style.transform = 'scale(1)';
+    this.els.breathRing.style.boxShadow = 'none';
     this.state.breathPhase = 'ready';
   }
 
@@ -665,8 +711,17 @@ class PlankApp {
     this.playSuccessSound();
     this.createConfetti();
 
+    if (completedTime < 60) {
+      this.autoCloseTimeout = setTimeout(() => {
+        this.hideCompletion();
+      }, 3000);
+    }
+
     this.els.startBtn.textContent = '开始';
     this.els.timerDisplay.classList.remove('running', 'warning');
+    this.els.pauseIndicator.classList.remove('show');
+    this.els.progressRingFill.classList.remove('paused', 'warning');
+    this.els.progressRingFill.style.strokeDashoffset = 0;
   }
 
   updateCompletionStats(pausedCount, pausedTime, actualTime) {
@@ -773,6 +828,10 @@ class PlankApp {
   }
 
   hideCompletion() {
+    if (this.autoCloseTimeout) {
+      clearTimeout(this.autoCloseTimeout);
+      this.autoCloseTimeout = null;
+    }
     this.els.completionOverlay.classList.remove('show');
     this.state.timeLeft = this.state.duration;
     this.state.pausedIntervals = [];

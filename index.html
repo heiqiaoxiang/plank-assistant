@@ -23,9 +23,14 @@
 
     <main class="main">
       <div class="breath-container" id="breathContainer">
+        <svg class="progress-ring" viewBox="0 0 300 300">
+          <circle class="progress-ring-bg" cx="150" cy="150" r="135" />
+          <circle class="progress-ring-fill" cx="150" cy="150" r="135" id="progressRingFill" />
+        </svg>
         <div class="breath-ring"></div>
         <div class="timer-display" id="timerDisplay">60</div>
         <div class="breath-text" id="breathText">准备开始</div>
+        <div class="pause-indicator" id="pauseIndicator">⏸</div>
       </div>
 
       <div class="controls">
