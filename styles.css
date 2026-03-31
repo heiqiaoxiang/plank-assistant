@@ -759,3 +759,248 @@ body {
   padding: 40px 0;
   font-size: 14px;
 }
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  margin-top: 16px;
+}
+
+.action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  background: var(--surface);
+  border: none;
+  border-radius: 16px;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.action-btn:active {
+  transform: scale(0.96);
+  background: #2a2a2a;
+}
+
+.action-icon {
+  font-size: 18px;
+}
+
+/* Login Modal */
+.login-modal {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 500;
+}
+
+.login-modal.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.login-content {
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 24px;
+  width: 300px;
+}
+
+.login-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.login-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.login-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 28px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login-input-group input {
+  width: 100%;
+  background: var(--bg);
+  border: none;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 15px;
+  color: var(--text);
+  outline: none;
+  transition: box-shadow 0.15s;
+}
+
+.login-input-group input::placeholder {
+  color: var(--text-dim);
+}
+
+.login-input-group input:focus {
+  box-shadow: 0 0 0 2px var(--primary);
+}
+
+.login-error {
+  color: var(--accent);
+  font-size: 13px;
+  text-align: center;
+  padding: 8px;
+  background: rgba(255, 107, 107, 0.1);
+  border-radius: 8px;
+}
+
+.login-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.login-buttons .btn {
+  flex: 1;
+  min-width: auto;
+  min-height: 48px;
+  font-size: 15px;
+}
+
+.user-btn {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--surface);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.user-btn:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.user-btn .user-icon {
+  font-size: 18px;
+}
+
+.user-modal {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 500;
+}
+
+.user-modal.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.user-modal-content {
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 24px;
+  width: 280px;
+  text-align: center;
+}
+
+.user-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.user-modal-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.user-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 28px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.user-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--primary-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+}
+
+.user-email {
+  font-size: 14px;
+  color: var(--text);
+  word-break: break-all;
+}
+
+.user-actions {
+  margin-top: 16px;
+}
+
+.user-actions .btn {
+  width: 100%;
+  min-width: auto;
+  min-height: 48px;
+  font-size: 15px;
+}

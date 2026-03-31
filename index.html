@@ -19,6 +19,9 @@
         <span class="mode-icon">◎</span>
         <span class="mode-text" id="modeText">经典平板支撑</span>
       </button>
+      <button class="user-btn" id="userBtn" aria-label="用户中心" style="display:none;">
+        <span class="user-icon">👤</span>
+      </button>
     </header>
 
     <main class="main">
@@ -59,6 +62,17 @@
           <span class="stat-value" id="totalTime">0m</span>
           <span class="stat-label">总时长</span>
         </div>
+      </div>
+
+      <div class="action-buttons">
+        <button class="action-btn" id="historyBtn">
+          <span class="action-icon">📋</span>
+          <span class="action-text">历史</span>
+        </button>
+        <button class="action-btn" id="leaderboardBtn">
+          <span class="action-icon">🏆</span>
+          <span class="action-text">排行</span>
+        </button>
       </div>
     </main>
 
@@ -117,6 +131,44 @@
         </div>
         <div class="history-list" id="historyList"></div>
         <div class="leaderboard-list" id="leaderboardList" style="display:none;"></div>
+      </div>
+    </div>
+
+    <div class="login-modal" id="loginModal">
+      <div class="login-content">
+        <div class="login-header">
+          <h3 id="loginTitle">登录后查看排行榜</h3>
+          <button class="login-close" id="loginClose">×</button>
+        </div>
+        <div class="login-form">
+          <div class="login-input-group">
+            <input type="email" id="loginEmail" placeholder="邮箱" autocomplete="email">
+          </div>
+          <div class="login-input-group">
+            <input type="password" id="loginPassword" placeholder="密码" autocomplete="current-password">
+          </div>
+          <div class="login-error" id="loginError" style="display:none;"></div>
+          <div class="login-buttons">
+            <button class="btn btn-secondary" id="loginSwitchBtn">注册</button>
+            <button class="btn btn-primary" id="loginSubmitBtn">登录</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="user-modal" id="userModal">
+      <div class="user-modal-content">
+        <div class="user-modal-header">
+          <h3>用户中心</h3>
+          <button class="user-modal-close" id="userModalClose">×</button>
+        </div>
+        <div class="user-info">
+          <div class="user-avatar" id="userAvatar">👤</div>
+          <div class="user-email" id="userEmail">user@example.com</div>
+        </div>
+        <div class="user-actions">
+          <button class="btn btn-secondary" id="logoutBtn">退出登录</button>
+        </div>
       </div>
     </div>
   </div>
