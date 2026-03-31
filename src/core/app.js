@@ -382,7 +382,7 @@ class PlankApp {
 
     document.querySelectorAll('.history-tab').forEach(tab => {
       tab.addEventListener('click', () => {
-        document.querySelectorAll('.history-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.history-tab').forEach(t => { t.classList.remove('active'); });
         tab.classList.add('active');
         const tabName = tab.dataset.tab;
         if (tabName === 'history') {
@@ -539,7 +539,7 @@ class PlankApp {
     const value = parseInt(this.els.customTimeInput.value);
     if (value >= 10 && value <= 600) {
       this.setDuration(value);
-      this.els.presets.forEach(p => p.classList.remove('active'));
+      this.els.presets.forEach(p => { p.classList.remove('active'); });
       this.els.presets[4].classList.add('active');
     }
     this.hideCustomModal();
@@ -749,7 +749,7 @@ class PlankApp {
   }
 
   clearScheduledCheckpoints() {
-    this.state.checkpointTimeoutIds.forEach(id => clearTimeout(id));
+    this.state.checkpointTimeoutIds.forEach(id => { clearTimeout(id); });
     this.state.checkpointTimeoutIds = [];
   }
 
@@ -1049,7 +1049,7 @@ class PlankApp {
 
     document.querySelectorAll('.leaderboard-type-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.leaderboard-type-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.leaderboard-type-btn').forEach(b => { b.classList.remove('active'); });
         btn.classList.add('active');
         this.loadLeaderboard(btn.dataset.type);
       });
