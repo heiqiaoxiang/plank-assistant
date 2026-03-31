@@ -1,4 +1,5 @@
 import { supabase, STORAGE_KEY } from './supabase.js';
+import { signInWithEmail, signUpWithEmail, signOut as authSignOut } from './auth.js';
 const INHALE_TIME = 4000;
 const HOLD_TIME = 2000;
 const EXHALE_TIME = 4000;
@@ -52,7 +53,8 @@ class PlankApp {
       totalPausedTime: 0,
       checkpointTimeoutIds: [],
       encouragementIntervalId: null,
-      autoCloseTimeout: null
+      autoCloseTimeout: null,
+      isLoginMode: true
     };
 
     this.audioContext = null;
@@ -64,6 +66,7 @@ class PlankApp {
     this.bindEvents();
     this.updateStats();
     this.renderModeSelector();
+    this.updateUserBtn();
 
     this.initSupabase();
   }
@@ -105,6 +108,7 @@ class PlankApp {
           await this.syncPendingSessions();
           await this.mergeCloudStats();
         }
+        this.updateUserBtn();
       });
 
       window.addEventListener('online', () => {
@@ -217,7 +221,22 @@ class PlankApp {
       statsPanel: document.getElementById('statsPanel'),
       leaderboardList: document.getElementById('leaderboardList'),
       progressRingFill: document.getElementById('progressRingFill'),
-      pauseIndicator: document.getElementById('pauseIndicator')
+      pauseIndicator: document.getElementById('pauseIndicator'),
+      historyBtn: document.getElementById('historyBtn'),
+      leaderboardBtn: document.getElementById('leaderboardBtn'),
+      loginModal: document.getElementById('loginModal'),
+      loginEmail: document.getElementById('loginEmail'),
+      loginPassword: document.getElementById('loginPassword'),
+      loginSubmitBtn: document.getElementById('loginSubmitBtn'),
+      loginSwitchBtn: document.getElementById('loginSwitchBtn'),
+      loginClose: document.getElementById('loginClose'),
+      loginError: document.getElementById('loginError'),
+      loginTitle: document.getElementById('loginTitle'),
+      userBtn: document.getElementById('userBtn'),
+      userModal: document.getElementById('userModal'),
+      userModalClose: document.getElementById('userModalClose'),
+      userEmail: document.getElementById('userEmail'),
+      logoutBtn: document.getElementById('logoutBtn')
     };
   }
 
@@ -295,6 +314,35 @@ class PlankApp {
         this.loadLeaderboard(btn.dataset.type);
       });
     });
+
+    this.els.historyBtn.addEventListener('click', () => {
+      this.showHistoryTab('history');
+    });
+
+    this.els.leaderboardBtn.addEventListener('click', () => {
+      this.showHistoryTab('leaderboard');
+    });
+
+    this.els.loginClose.addEventListener('click', () => this.hideLoginModal());
+    this.els.loginModal.addEventListener('click', (e) => {
+      if (e.target === this.els.loginModal) {
+        this.hideLoginModal();
+      }
+    });
+    this.els.loginSubmitBtn.addEventListener('click', () => this.handleLoginSubmit());
+    this.els.loginSwitchBtn.addEventListener('click', () => this.handleLoginSwitch());
+    this.els.loginPassword.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') this.handleLoginSubmit();
+    });
+
+    this.els.userBtn.addEventListener('click', () => this.showUserModal());
+    this.els.userModalClose.addEventListener('click', () => this.hideUserModal());
+    this.els.userModal.addEventListener('click', (e) => {
+      if (e.target === this.els.userModal) {
+        this.hideUserModal();
+      }
+    });
+    this.els.logoutBtn.addEventListener('click', () => this.handleLogout());
   }
 
   loadData() {
@@ -740,8 +788,119 @@ class PlankApp {
     this.els.historyOverlay.classList.add('show');
   }
 
+  showHistoryTab(tab) {
+    if (tab === 'leaderboard' && !this.isEmailUserLoggedIn()) {
+      this.showLoginModal();
+      return;
+    }
+
+    this.els.historyOverlay.classList.add('show');
+    document.querySelectorAll('.history-tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.tab === tab);
+    });
+
+    if (tab === 'history') {
+      this.els.historyList.style.display = 'block';
+      this.els.leaderboardList.style.display = 'none';
+      this.renderHistory();
+    } else {
+      this.els.historyList.style.display = 'none';
+      this.els.leaderboardList.style.display = 'block';
+      this.loadLeaderboard();
+    }
+  }
+
   hideHistory() {
     this.els.historyOverlay.classList.remove('show');
+  }
+
+  isEmailUserLoggedIn() {
+    if (!supabase?.auth?.session()) return false;
+    const user = supabase.auth.session().user;
+    return user && user.email && !user.is_anonymous;
+  }
+
+  showLoginModal() {
+    this.els.loginModal.classList.add('show');
+    this.els.loginEmail.value = '';
+    this.els.loginPassword.value = '';
+    this.els.loginError.style.display = 'none';
+    this.state.isLoginMode = true;
+    this.els.loginTitle.textContent = '登录后查看排行榜';
+    this.els.loginSubmitBtn.textContent = '登录';
+    this.els.loginSwitchBtn.textContent = '注册';
+  }
+
+  hideLoginModal() {
+    this.els.loginModal.classList.remove('show');
+  }
+
+  async handleLoginSubmit() {
+    const email = this.els.loginEmail.value.trim();
+    const password = this.els.loginPassword.value;
+
+    if (!email || !password) {
+      this.els.loginError.textContent = '请输入邮箱和密码';
+      this.els.loginError.style.display = 'block';
+      return;
+    }
+
+    this.els.loginSubmitBtn.disabled = true;
+    this.els.loginSubmitBtn.textContent = '请稍候...';
+
+    let result;
+    if (this.state.isLoginMode) {
+      result = await signInWithEmail(email, password);
+    } else {
+      result = await signUpWithEmail(email, password);
+    }
+
+    this.els.loginSubmitBtn.disabled = false;
+    this.els.loginSubmitBtn.textContent = this.state.isLoginMode ? '登录' : '注册';
+
+    if (result.error) {
+      this.els.loginError.textContent = result.error;
+      this.els.loginError.style.display = 'block';
+      return;
+    }
+
+    this.hideLoginModal();
+    this.updateUserBtn();
+    this.showHistoryTab('leaderboard');
+  }
+
+  handleLoginSwitch() {
+    this.state.isLoginMode = !this.state.isLoginMode;
+    this.els.loginError.style.display = 'none';
+    this.els.loginTitle.textContent = this.state.isLoginMode ? '登录后查看排行榜' : '注册后查看排行榜';
+    this.els.loginSubmitBtn.textContent = this.state.isLoginMode ? '登录' : '注册';
+    this.els.loginSwitchBtn.textContent = this.state.isLoginMode ? '注册' : '登录';
+  }
+
+  updateUserBtn() {
+    const isEmailUser = this.isEmailUserLoggedIn();
+    this.els.userBtn.style.display = isEmailUser ? 'flex' : 'none';
+    if (isEmailUser) {
+      const user = supabase.auth.session().user;
+      this.els.userEmail.textContent = user.email || '用户';
+    }
+  }
+
+  showUserModal() {
+    this.updateUserBtn();
+    this.els.userModal.classList.add('show');
+  }
+
+  hideUserModal() {
+    this.els.userModal.classList.remove('show');
+  }
+
+  async handleLogout() {
+    if (supabase) {
+      await authSignOut();
+    }
+    this.hideUserModal();
+    this.updateUserBtn();
   }
 
   async loadLeaderboard(type = 'total_duration') {
@@ -921,4 +1080,17 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   });
+
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
+
+  setInterval(() => {
+    navigator.serviceWorker.register('sw.js').then((reg) => {
+      reg.update();
+    }).catch(() => {});
+  }, 60 * 60 * 1000);
 }
