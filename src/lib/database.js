@@ -217,8 +217,8 @@ function saveSessionLocal(sessionData) {
     pausedTime: sessionData.pausedTime || 0,
     restDuration: sessionData.restDuration || 0
   });
-  if (data.history.length > 500) {
-    data.history = data.history.slice(-500);
+  if (data.history.length > 100) {
+    data.history = data.history.slice(-100);
   }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   return { success: true };

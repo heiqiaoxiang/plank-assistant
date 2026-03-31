@@ -46,6 +46,28 @@ body {
   padding: 16px 20px;
   display: flex;
   justify-content: center;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+}
+
+.sync-indicator {
+  position: absolute;
+  right: 16px;
+  background: var(--surface);
+  padding: 4px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.sync-indicator.syncing {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .mode-btn {

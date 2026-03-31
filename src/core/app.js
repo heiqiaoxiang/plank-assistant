@@ -1,10 +1,27 @@
 import { supabase, STORAGE_KEY } from '../lib/supabase.js';
 import { signInWithEmail, signUpWithEmail, signOut as authSignOut } from '../lib/auth.js';
 import Chart from 'chart.js/auto';
+// === Constants ===
 const INHALE_TIME = 4000;
 const HOLD_TIME = 2000;
 const EXHALE_TIME = 4000;
 const PROGRESS_RING_CIRCUMFERENCE = 2 * Math.PI * 135;
+
+// History
+const HISTORY_LIMIT = 100; // Max records to keep
+
+// Encouragement
+const ENCOURAGEMENT_FIRST_DELAY = 15000; // First encouragement at 15s
+const ENCOURAGEMENT_INTERVAL = 30000; // Every 30s after
+const MIN_DURATION_FOR_ENCOURAGEMENT = 60; // Only for sessions >= 60s
+
+// Sync
+const SYNC_RETRY_INTERVAL = 30000; // Retry failed sync every 30s
+const SW_UPDATE_INTERVAL = 60 * 60 * 1000; // Service Worker update every hour
+
+// Checkpoints
+const CHECKPOINT_INTERVAL = 30; // Every 30s
+const CHECKPOINT_FIRST_OFFSET = 5; // First checkpoint 5s before target
 
 const modeNames = {
   classic: '经典平板支撑',
@@ -54,7 +71,9 @@ class PlankApp {
       checkpointTimeoutIds: [],
       encouragementIntervalId: null,
       autoCloseTimeout: null,
-      isLoginMode: true
+      isLoginMode: true,
+      syncRetryIntervalId: null,
+      isSyncing: false
     };
 
     this.audioContext = null;
@@ -116,9 +135,15 @@ class PlankApp {
       window.addEventListener('online', () => {
         this.syncPendingSessions();
         this.mergeCloudStats();
+        this.startSyncRetry();
       });
     } catch (err) {
       console.warn('Supabase init failed (offline mode):', err.message);
+    }
+
+    this.updateSyncIndicator();
+    if (this.syncPending.length > 0) {
+      this.startSyncRetry();
     }
   }
 
@@ -134,8 +159,14 @@ class PlankApp {
 
   async syncPendingSessions() {
     if (!this.userId || !navigator.onLine || this.syncPending.length === 0) return;
+    if (this.state.isSyncing) return;
+
+    this.state.isSyncing = true;
+    this.updateSyncIndicator();
 
     const toSync = [...this.syncPending];
+    let hasErrors = false;
+
     for (const session of toSync) {
       try {
         const { error } = await supabase.from('sessions').insert({
@@ -146,12 +177,23 @@ class PlankApp {
         });
         if (!error) {
           this.syncPending = this.syncPending.filter(s => s.date !== session.date);
+        } else {
+          hasErrors = true;
         }
       } catch (err) {
         console.warn('Sync failed for session:', err.message);
+        hasErrors = true;
       }
     }
     this.savePendingSync();
+    this.state.isSyncing = false;
+    this.updateSyncIndicator();
+
+    if (hasErrors && this.syncPending.length > 0) {
+      this.startSyncRetry();
+    } else {
+      this.stopSyncRetry();
+    }
   }
 
   async syncSessionToCloud(sessionData) {
@@ -165,9 +207,11 @@ class PlankApp {
         paused_count: sessionData.pausedCount
       });
       if (error) throw error;
+      this.stopSyncRetry();
     } catch (err) {
       this.syncPending.push({ ...sessionData, userId: this.userId });
       this.savePendingSync();
+      this.startSyncRetry();
     }
   }
 
@@ -189,6 +233,41 @@ class PlankApp {
       }
     } catch (err) {
       console.warn('Failed to merge cloud stats:', err.message);
+    }
+  }
+
+  startSyncRetry() {
+    if (this.state.syncRetryIntervalId) return;
+    if (this.syncPending.length === 0) return;
+
+    this.state.syncRetryIntervalId = setInterval(() => {
+      if (navigator.onLine && !this.state.isSyncing) {
+        this.syncPendingSessions();
+      }
+    }, SYNC_RETRY_INTERVAL);
+  }
+
+  stopSyncRetry() {
+    if (this.state.syncRetryIntervalId) {
+      clearInterval(this.state.syncRetryIntervalId);
+      this.state.syncRetryIntervalId = null;
+    }
+  }
+
+  updateSyncIndicator() {
+    const indicator = document.getElementById('syncIndicator');
+    if (!indicator) return;
+
+    if (this.syncPending.length === 0) {
+      indicator.style.display = 'none';
+    } else if (this.state.isSyncing) {
+      indicator.style.display = 'flex';
+      indicator.textContent = '同步中...';
+      indicator.classList.add('syncing');
+    } else {
+      indicator.style.display = 'flex';
+      indicator.textContent = `${this.syncPending.length} 条待同步`;
+      indicator.classList.remove('syncing');
     }
   }
 
@@ -654,7 +733,7 @@ class PlankApp {
     const duration = this.state.duration;
     const checkpoints = [];
 
-    for (let t = 30; t <= duration - 5; t += 30) {
+    for (let t = CHECKPOINT_INTERVAL; t <= duration - CHECKPOINT_FIRST_OFFSET; t += CHECKPOINT_INTERVAL) {
       checkpoints.push(t);
     }
 
@@ -689,9 +768,8 @@ class PlankApp {
 
   startEncouragement() {
     this.stopEncouragement();
-    if (this.state.duration < 60) return;
+    if (this.state.duration < MIN_DURATION_FOR_ENCOURAGEMENT) return;
 
-    const firstEncouragementDelay = 15000;
     const timeoutId = setTimeout(() => {
       if (this.state.isRunning) {
         this.showEncouragement();
@@ -699,9 +777,9 @@ class PlankApp {
           if (this.state.isRunning) {
             this.showEncouragement();
           }
-        }, 30000);
+        }, ENCOURAGEMENT_INTERVAL);
       }
-    }, firstEncouragementDelay);
+    }, ENCOURAGEMENT_FIRST_DELAY);
     this.state.checkpointTimeoutIds.push(timeoutId);
   }
 
@@ -762,8 +840,8 @@ class PlankApp {
       pausedIntervals: [...this.state.pausedIntervals],
       actualTime
     });
-    if (this.data.history.length > 500) {
-      this.data.history = this.data.history.slice(-500);
+    if (this.data.history.length > HISTORY_LIMIT) {
+      this.data.history = this.data.history.slice(-HISTORY_LIMIT);
     }
     this.saveData();
     this.updateStats();
@@ -1219,5 +1297,5 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').then((reg) => {
       reg.update();
     }).catch(() => {});
-  }, 60 * 60 * 1000);
+  }, SW_UPDATE_INTERVAL);
 }

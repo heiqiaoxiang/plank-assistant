@@ -55,4 +55,48 @@ test.describe('Plank App', () => {
     const text = await timerDisplay.textContent();
     expect(parseInt(text)).toBeLessThan(60);
   });
+
+  test('pause and resume functionality', async ({ page }) => {
+    const startBtn = page.locator('#startBtn');
+    const pauseIndicator = page.locator('#pauseIndicator');
+    const timerDisplay = page.locator('#timerDisplay');
+
+    await startBtn.click();
+    await page.waitForTimeout(2100);
+    
+    const timeBeforePause = parseInt(await timerDisplay.textContent());
+    expect(timeBeforePause).toBeLessThan(59);
+    
+    await startBtn.click();
+    await expect(pauseIndicator).toHaveClass(/show/);
+    expect(await startBtn.textContent()).toBe('继续');
+    
+    const timeDuringPause = parseInt(await timerDisplay.textContent());
+    await page.waitForTimeout(1500);
+    const timeAfterPause = parseInt(await timerDisplay.textContent());
+    expect(timeAfterPause).toBe(timeDuringPause);
+    
+    await startBtn.click();
+    await expect(pauseIndicator).not.toHaveClass(/show/);
+    expect(await startBtn.textContent()).toBe('暂停');
+    
+    const timeAfterResume = parseInt(await timerDisplay.textContent());
+    await page.waitForTimeout(1100);
+    const timeAfterMore = parseInt(await timerDisplay.textContent());
+    expect(timeAfterMore).toBeLessThan(timeAfterResume);
+  });
+
+  test('reset restores initial state', async ({ page }) => {
+    const startBtn = page.locator('#startBtn');
+    const resetBtn = page.locator('#resetBtn');
+    const timerDisplay = page.locator('#timerDisplay');
+
+    await startBtn.click();
+    await page.waitForTimeout(1100);
+    expect(await startBtn.textContent()).toBe('暂停');
+    
+    await resetBtn.click();
+    await expect(timerDisplay).toHaveText('60');
+    expect(await startBtn.textContent()).toBe('开始');
+  });
 });
