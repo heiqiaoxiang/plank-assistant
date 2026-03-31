@@ -58,7 +58,7 @@
           <span class="stat-value" id="weekCount">0</span>
           <span class="stat-label">本周</span>
         </div>
-        <div class="stat-item stat-clickable">
+        <div class="stat-item">
           <span class="stat-value" id="totalTime">0m</span>
           <span class="stat-label">总时长</span>
         </div>
@@ -67,7 +67,7 @@
       <div class="action-buttons">
         <button class="action-btn" id="historyBtn">
           <span class="action-icon">📋</span>
-          <span class="action-text">历史</span>
+          <span class="action-text">训练记录</span>
         </button>
         <button class="action-btn" id="leaderboardBtn">
           <span class="action-icon">🏆</span>
@@ -76,7 +76,7 @@
       </div>
     </main>
 
-    <div class="mode-selector" id="modeSelector">
+      <div class="mode-selector" id="modeSelector">
       <div class="mode-option" data-mode="classic">
         <span class="mode-emoji">🧘</span>
         <span>经典平板支撑</span>
@@ -88,10 +88,6 @@
       <div class="mode-option" data-mode="side-right">
         <span class="mode-emoji">🤪</span>
         <span>右侧平板支撑</span>
-      </div>
-      <div class="mode-option" data-mode="mountain">
-        <span class="mode-emoji">🏔️</span>
-        <span>登山者</span>
       </div>
     </div>
 
@@ -125,12 +121,10 @@
         <div class="history-header">
           <div class="history-tabs">
             <button class="history-tab active" data-tab="history">训练记录</button>
-            <button class="history-tab" data-tab="leaderboard">排行榜</button>
           </div>
           <button class="history-close" id="historyClose">×</button>
         </div>
         <div class="history-list" id="historyList"></div>
-        <div class="leaderboard-list" id="leaderboardList" style="display:none;"></div>
       </div>
     </div>
 

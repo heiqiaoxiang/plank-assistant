@@ -8,8 +8,7 @@ const PROGRESS_RING_CIRCUMFERENCE = 2 * Math.PI * 135;
 const modeNames = {
   classic: '经典平板支撑',
   'side-left': '左侧平板支撑',
-  'side-right': '右侧平板支撑',
-  mountain: '登山者'
+  'side-right': '右侧平板支撑'
 };
 
 const completionMessages = [
@@ -219,7 +218,6 @@ class PlankApp {
       historyList: document.getElementById('historyList'),
       historyClose: document.getElementById('historyClose'),
       statsPanel: document.getElementById('statsPanel'),
-      leaderboardList: document.getElementById('leaderboardList'),
       progressRingFill: document.getElementById('progressRingFill'),
       pauseIndicator: document.getElementById('pauseIndicator'),
       historyBtn: document.getElementById('historyBtn'),
@@ -279,40 +277,11 @@ class PlankApp {
       if (e.key === 'Enter') this.confirmCustomTime();
     });
 
-    this.els.statsPanel.addEventListener('click', (e) => {
-      if (e.target.closest('.stat-clickable')) {
-        this.showHistory();
-      }
-    });
     this.els.historyClose.addEventListener('click', () => this.hideHistory());
     this.els.historyOverlay.addEventListener('click', (e) => {
       if (e.target === this.els.historyOverlay) {
         this.hideHistory();
       }
-    });
-
-    document.querySelectorAll('.history-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.history-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        const tabName = tab.dataset.tab;
-        if (tabName === 'history') {
-          this.els.historyList.style.display = 'block';
-          this.els.leaderboardList.style.display = 'none';
-        } else {
-          this.els.historyList.style.display = 'none';
-          this.els.leaderboardList.style.display = 'block';
-          this.loadLeaderboard();
-        }
-      });
-    });
-
-    document.querySelectorAll('.leaderboard-type-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.leaderboard-type-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        this.loadLeaderboard(btn.dataset.type);
-      });
     });
 
     this.els.historyBtn.addEventListener('click', () => {
@@ -617,6 +586,22 @@ class PlankApp {
   setBreathPhase(phase, text) {
     this.state.breathPhase = phase;
     this.els.breathText.textContent = text;
+    this.triggerHaptic(phase);
+  }
+
+  triggerHaptic(phase) {
+    if (!('vibrate' in navigator)) return;
+    
+    const patterns = {
+      'inhale': [200, 100, 200],
+      'hold': [200],
+      'exhale': [100, 100, 200]
+    };
+    
+    const pattern = patterns[phase];
+    if (pattern) {
+      navigator.vibrate(pattern);
+    }
   }
 
   stopBreathCycle() {
@@ -789,25 +774,8 @@ class PlankApp {
   }
 
   showHistoryTab(tab) {
-    if (tab === 'leaderboard' && !this.isEmailUserLoggedIn()) {
-      this.showLoginModal();
-      return;
-    }
-
     this.els.historyOverlay.classList.add('show');
-    document.querySelectorAll('.history-tab').forEach(t => {
-      t.classList.toggle('active', t.dataset.tab === tab);
-    });
-
-    if (tab === 'history') {
-      this.els.historyList.style.display = 'block';
-      this.els.leaderboardList.style.display = 'none';
-      this.renderHistory();
-    } else {
-      this.els.historyList.style.display = 'none';
-      this.els.leaderboardList.style.display = 'block';
-      this.loadLeaderboard();
-    }
+    this.renderHistory();
   }
 
   hideHistory() {
