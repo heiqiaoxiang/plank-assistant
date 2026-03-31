@@ -16,6 +16,13 @@ test-results/
 # Temp files
 tmp/
 
+# Development scripts
+restart.sh
+test-*.js
+
+# Planning docs
+IMPROVEMENT_PLAN.md
+
 # IDE
 .vscode/
 .idea/
