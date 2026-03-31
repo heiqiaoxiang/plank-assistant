@@ -3,12 +3,12 @@ const CACHE_NAME = `plank-assistant-${CACHE_VERSION}`;
 const urlsToCache = [
   '/',
   '/index.html',
-  '/styles.css',
-  '/app.js',
+  '/src/styles/main.css',
+  '/src/core/app.js',
   '/manifest.json',
-  '/supabaseClient.js',
-  '/auth.js',
-  '/database.js'
+  '/src/lib/supabase.js',
+  '/src/lib/auth.js',
+  '/src/lib/database.js'
 ];
 
 self.addEventListener('install', (event) => {

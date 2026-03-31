@@ -1,5 +1,5 @@
-import { supabase, STORAGE_KEY } from './supabase.js';
-import { signInWithEmail, signUpWithEmail, signOut as authSignOut } from './auth.js';
+import { supabase, STORAGE_KEY } from '../lib/supabase.js';
+import { signInWithEmail, signUpWithEmail, signOut as authSignOut } from '../lib/auth.js';
 const INHALE_TIME = 4000;
 const HOLD_TIME = 2000;
 const EXHALE_TIME = 4000;

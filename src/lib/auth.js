@@ -1,6 +1,4 @@
-import { supabase, isSupabaseConfigured } from './supabaseClient.js';
-
-const STORAGE_KEY = 'plank_assistant_data';
+import { supabase, isSupabaseConfigured, STORAGE_KEY } from './supabase.js';
 
 if (typeof window !== 'undefined') {
   window.initAuth = initAuth;
