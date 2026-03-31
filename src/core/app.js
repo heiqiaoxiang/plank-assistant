@@ -1,5 +1,6 @@
 import { supabase, STORAGE_KEY } from '../lib/supabase.js';
 import { signInWithEmail, signUpWithEmail, signOut as authSignOut } from '../lib/auth.js';
+import Chart from 'chart.js/auto';
 const INHALE_TIME = 4000;
 const HOLD_TIME = 2000;
 const EXHALE_TIME = 4000;
@@ -82,7 +83,9 @@ class PlankApp {
   savePendingSync() {
     try {
       localStorage.setItem('plank_pending_sync', JSON.stringify(this.syncPending));
-    } catch (e) {}
+    } catch (e) {
+      console.warn('[App] Failed to save pending sync:', e.message);
+    }
   }
 
   async initSupabase() {
@@ -217,8 +220,10 @@ class PlankApp {
       historyOverlay: document.getElementById('historyOverlay'),
       historyList: document.getElementById('historyList'),
       historyClose: document.getElementById('historyClose'),
+      trendPanel: document.getElementById('trendPanel'),
       statsPanel: document.getElementById('statsPanel'),
       progressRingFill: document.getElementById('progressRingFill'),
+      leaderboardList: document.getElementById('leaderboardList'),
       pauseIndicator: document.getElementById('pauseIndicator'),
       historyBtn: document.getElementById('historyBtn'),
       leaderboardBtn: document.getElementById('leaderboardBtn'),
@@ -289,7 +294,34 @@ class PlankApp {
     });
 
     this.els.leaderboardBtn.addEventListener('click', () => {
-      this.showHistoryTab('leaderboard');
+      if (this.isEmailUserLoggedIn()) {
+        this.showHistoryTab('leaderboard');
+      } else {
+        this.showLoginModal();
+      }
+    });
+
+    document.querySelectorAll('.history-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.history-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const tabName = tab.dataset.tab;
+        if (tabName === 'history') {
+          this.els.historyList.style.display = 'block';
+          this.els.trendPanel.style.display = 'none';
+          this.els.leaderboardList.style.display = 'none';
+        } else if (tabName === 'trend') {
+          this.els.historyList.style.display = 'none';
+          this.els.trendPanel.style.display = 'block';
+          this.els.leaderboardList.style.display = 'none';
+          this.renderChart();
+        } else if (tabName === 'leaderboard') {
+          this.els.historyList.style.display = 'none';
+          this.els.trendPanel.style.display = 'none';
+          this.els.leaderboardList.style.display = 'block';
+          this.loadLeaderboard();
+        }
+      });
     });
 
     this.els.loginClose.addEventListener('click', () => this.hideLoginModal());
@@ -324,7 +356,9 @@ class PlankApp {
         }
         return data;
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('[App] Failed to load data:', e.message);
+    }
     return {
       todayCount: 0,
       weekCount: 0,
@@ -337,7 +371,9 @@ class PlankApp {
   saveData() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
-    } catch (e) {}
+    } catch (e) {
+      console.warn('[App] Failed to save data:', e.message);
+    }
   }
 
   isToday(dateStr) {
@@ -354,7 +390,9 @@ class PlankApp {
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() - now.getDay());
     startOfWeek.setHours(0, 0, 0, 0);
-    return date >= startOfWeek;
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 7);
+    return date >= startOfWeek && date < endOfWeek;
   }
 
   updateStats() {
@@ -724,8 +762,8 @@ class PlankApp {
       pausedIntervals: [...this.state.pausedIntervals],
       actualTime
     });
-    if (this.data.history.length > 100) {
-      this.data.history = this.data.history.slice(-100);
+    if (this.data.history.length > 500) {
+      this.data.history = this.data.history.slice(-500);
     }
     this.saveData();
     this.updateStats();
@@ -775,7 +813,22 @@ class PlankApp {
 
   showHistoryTab(tab) {
     this.els.historyOverlay.classList.add('show');
-    this.renderHistory();
+    
+    document.querySelectorAll('.history-tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.tab === tab);
+    });
+    
+    this.els.historyList.style.display = tab === 'history' ? 'block' : 'none';
+    this.els.trendPanel.style.display = tab === 'trend' ? 'block' : 'none';
+    this.els.leaderboardList.style.display = tab === 'leaderboard' ? 'block' : 'none';
+    
+    if (tab === 'history') {
+      this.renderHistory();
+    } else if (tab === 'trend') {
+      this.renderChart();
+    } else if (tab === 'leaderboard') {
+      this.loadLeaderboard();
+    }
   }
 
   hideHistory() {
@@ -783,8 +836,10 @@ class PlankApp {
   }
 
   isEmailUserLoggedIn() {
-    if (!supabase?.auth?.session()) return false;
-    const user = supabase.auth.session().user;
+    if (!supabase) return false;
+    const session = supabase.auth?.session;
+    if (!session) return false;
+    const user = session.user;
     return user && user.email && !user.is_anonymous;
   }
 
@@ -848,9 +903,9 @@ class PlankApp {
   updateUserBtn() {
     const isEmailUser = this.isEmailUserLoggedIn();
     this.els.userBtn.style.display = isEmailUser ? 'flex' : 'none';
-    if (isEmailUser) {
-      const user = supabase.auth.session().user;
-      this.els.userEmail.textContent = user.email || '用户';
+    if (isEmailUser && supabase) {
+      const user = supabase.auth.session()?.user;
+      this.els.userEmail.textContent = user?.email || '用户';
     }
   }
 
@@ -952,6 +1007,110 @@ class PlankApp {
         </div>
       `;
     }).join('');
+  }
+
+  renderChart() {
+    const history = this.data.history || [];
+    if (history.length === 0) {
+      this.els.trendPanel.innerHTML = '<div class="trend-empty">暂无数据</div>';
+      return;
+    }
+
+    const dailyData = {};
+    history.forEach(item => {
+      const date = new Date(item.date);
+      const dateKey = `${date.getMonth() + 1}/${date.getDate()}`;
+      if (!dailyData[dateKey]) {
+        dailyData[dateKey] = { count: 0, trainingDuration: 0, restDuration: 0 };
+      }
+      dailyData[dateKey].count++;
+      dailyData[dateKey].trainingDuration += item.duration;
+      dailyData[dateKey].restDuration += item.restDuration || 0;
+    });
+
+    const labels = Object.keys(dailyData);
+    const countData = labels.map(d => dailyData[d].count);
+    const trainingData = labels.map(d => dailyData[d].trainingDuration);
+    const restData = labels.map(d => dailyData[d].restDuration);
+
+    if (this.trendChartInstance) {
+      this.trendChartInstance.destroy();
+    }
+
+    this.trendChartInstance = new Chart(this.els.trendChart, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: '训练次数',
+            data: countData,
+            borderColor: '#00d4aa',
+            backgroundColor: 'rgba(0, 212, 170, 0.1)',
+            yAxisID: 'y',
+            tension: 0.3,
+            fill: true
+          },
+          {
+            label: '训练时长(秒)',
+            data: trainingData,
+            borderColor: '#4d96ff',
+            backgroundColor: 'rgba(77, 150, 255, 0.1)',
+            yAxisID: 'y1',
+            tension: 0.3,
+            fill: true
+          },
+          {
+            label: '休息时长(秒)',
+            data: restData,
+            borderColor: '#ff6b6b',
+            backgroundColor: 'rgba(255, 107, 107, 0.1)',
+            yAxisID: 'y1',
+            tension: 0.3,
+            fill: true
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: '#888888',
+              boxWidth: 12,
+              padding: 16,
+              font: { size: 11 }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: '#2a2a2a' },
+            ticks: { color: '#888888', font: { size: 10 } }
+          },
+          y: {
+            type: 'linear',
+            position: 'left',
+            grid: { color: '#2a2a2a' },
+            ticks: { color: '#00d4aa', font: { size: 10 } },
+            title: { display: true, text: '次数', color: '#00d4aa', font: { size: 10 } }
+          },
+          y1: {
+            type: 'linear',
+            position: 'right',
+            grid: { drawOnChartArea: false },
+            ticks: { color: '#888888', font: { size: 10 } },
+            title: { display: true, text: '时长(秒)', color: '#888888', font: { size: 10 } }
+          }
+        }
+      }
+    });
   }
 
   hideCompletion() {

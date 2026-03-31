@@ -20,7 +20,8 @@ export async function saveSession(sessionData) {
     user_id: user.id,
     duration: sessionData.duration,
     mode: sessionData.mode,
-    paused_count: sessionData.pausedCount || 0
+    paused_count: sessionData.pausedCount || 0,
+    rest_duration: sessionData.restDuration || 0
   });
 
   if (error) {
@@ -213,10 +214,11 @@ function saveSessionLocal(sessionData) {
     duration: sessionData.duration,
     mode: sessionData.mode,
     pausedCount: sessionData.pausedCount || 0,
-    pausedTime: sessionData.pausedTime || 0
+    pausedTime: sessionData.pausedTime || 0,
+    restDuration: sessionData.restDuration || 0
   });
-  if (data.history.length > 100) {
-    data.history = data.history.slice(-100);
+  if (data.history.length > 500) {
+    data.history = data.history.slice(-500);
   }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   return { success: true };

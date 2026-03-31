@@ -15,7 +15,8 @@ CREATE TABLE IF NOT EXISTS sessions (
   duration INT NOT NULL CHECK (duration >= 10 AND duration <= 600),
   mode TEXT NOT NULL CHECK (mode IN ('classic', 'side-left', 'side-right', 'mountain')),
   completed_at TIMESTAMPTZ DEFAULT NOW(),
-  paused_count INT DEFAULT 0
+  paused_count INT DEFAULT 0,
+  rest_duration INT DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
