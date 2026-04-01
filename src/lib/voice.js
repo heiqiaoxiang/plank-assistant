@@ -51,7 +51,9 @@ class VoiceManager {
         this.language = settings.language || DEFAULT_SETTINGS.language;
         this.volume = settings.volume ?? DEFAULT_SETTINGS.volume;
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('[Voice] Failed to load settings:', e.message);
+    }
   }
 
   saveSettings() {
@@ -61,7 +63,9 @@ class VoiceManager {
         language: this.language,
         volume: this.volume
       }));
-    } catch (e) {}
+    } catch (e) {
+      console.warn('[Voice] Failed to save settings:', e.message);
+    }
   }
 
   setEnabled(enabled) {

@@ -25,7 +25,9 @@ class I18n {
       if (stored && locales[stored]) {
         return stored;
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('[i18n] Failed to load locale:', e.message);
+    }
     return DEFAULT_LOCALE;
   }
 
@@ -34,7 +36,9 @@ class I18n {
     this.currentLocale = locale;
     try {
       localStorage.setItem(STORAGE_KEY, locale);
-    } catch (e) {}
+    } catch (e) {
+      console.warn('[i18n] Failed to save locale:', e.message);
+    }
   }
 
   async loadTranslations(locale) {

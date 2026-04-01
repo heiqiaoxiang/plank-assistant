@@ -82,7 +82,7 @@ class PlankApp {
       isPaused: false,
       intervalId: null,
       breathPhase: 'ready',
-      breathTimeoutId: null,
+      breathTimeoutIds: [],
       pauseStartTime: null,
       pausedIntervals: [],
       totalPausedTime: 0,
@@ -100,6 +100,8 @@ class PlankApp {
     this.userId = null;
     this.data = this.loadData();
     this.syncPending = this.loadPendingSync();
+    this.authSubscription = null;  // For Supabase auth subscription cleanup
+    this.syncLock = false;  // Mutex for sync operations
 
     this.initElements();
     this.bindEvents();
@@ -138,12 +140,12 @@ class PlankApp {
     });
 
     this.els.breathText.textContent = i18n.t('timer.status.ready');
-    this.els.todayCount.closest('.stat-item')?.querySelector('.stat-label') && 
-      (this.els.todayCount.closest('.stat-item').querySelector('.stat-label').textContent = i18n.t('stats.today'));
-    this.els.weekCount.closest('.stat-item')?.querySelector('.stat-label') && 
-      (this.els.weekCount.closest('.stat-item').querySelector('.stat-label').textContent = i18n.t('stats.week'));
-    this.els.totalTime.closest('.stat-item')?.querySelector('.stat-label') && 
-      (this.els.totalTime.closest('.stat-item').querySelector('.stat-label').textContent = i18n.t('stats.total'));
+    const todayLabel = this.els.todayCount.closest('.stat-item')?.querySelector('.stat-label');
+    if (todayLabel) todayLabel.textContent = i18n.t('stats.today');
+    const weekLabel = this.els.weekCount.closest('.stat-item')?.querySelector('.stat-label');
+    if (weekLabel) weekLabel.textContent = i18n.t('stats.week');
+    const totalLabel = this.els.totalTime.closest('.stat-item')?.querySelector('.stat-label');
+    if (totalLabel) totalLabel.textContent = i18n.t('stats.total');
 
     this.els.startBtn.textContent = i18n.t('controls.start');
 
@@ -170,6 +172,7 @@ class PlankApp {
       const stored = localStorage.getItem('plank_pending_sync');
       return stored ? JSON.parse(stored) : [];
     } catch (e) {
+      console.warn('[App] Failed to load pending sync:', e.message);
       return [];
     }
   }
@@ -189,7 +192,7 @@ class PlankApp {
     }
 
     try {
-      const { data: { session }, error } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         this.userId = session.user.id;
         await this.syncPendingSessions();
@@ -198,7 +201,7 @@ class PlankApp {
         await this.signInAnonymously();
       }
 
-      supabase.auth.onAuthStateChange(async (event, session) => {
+      const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (session?.user) {
           this.userId = session.user.id;
           await this.syncPendingSessions();
@@ -206,12 +209,14 @@ class PlankApp {
         }
         this.updateUserBtn();
       });
+      this.authSubscription = data.subscription;
 
-      window.addEventListener('online', () => {
+      this._onlineHandler = () => {
         this.syncPendingSessions();
         this.mergeCloudStats();
         this.startSyncRetry();
-      });
+      };
+      window.addEventListener('online', this._onlineHandler);
     } catch (err) {
       console.warn('Supabase init failed (offline mode):', err.message);
     }
@@ -234,8 +239,9 @@ class PlankApp {
 
   async syncPendingSessions() {
     if (!this.userId || !navigator.onLine || this.syncPending.length === 0) return;
-    if (this.state.isSyncing) return;
+    if (this.state.isSyncing || this.syncLock) return;
 
+    this.syncLock = true;
     this.state.isSyncing = true;
     this.updateSyncIndicator();
 
@@ -262,6 +268,7 @@ class PlankApp {
     }
     this.savePendingSync();
     this.state.isSyncing = false;
+    this.syncLock = false;
     this.updateSyncIndicator();
 
     if (hasErrors && this.syncPending.length > 0) {
@@ -284,6 +291,7 @@ class PlankApp {
       if (error) throw error;
       this.stopSyncRetry();
     } catch (err) {
+      console.warn('[App] Sync session failed:', err.message);
       this.syncPending.push({ ...sessionData, userId: this.userId });
       this.savePendingSync();
       this.startSyncRetry();
@@ -703,7 +711,7 @@ class PlankApp {
     this.els.progressRingFill.classList.add('paused');
 
     clearInterval(this.state.intervalId);
-    clearTimeout(this.state.breathTimeoutId);
+    this.state.intervalId = null;
     this.stopBreathCycle();
     this.clearScheduledCheckpoints();
     this.stopEncouragement();
@@ -720,7 +728,7 @@ class PlankApp {
     this.state.totalPausedTime = 0;
 
     clearInterval(this.state.intervalId);
-    clearTimeout(this.state.breathTimeoutId);
+    this.state.intervalId = null;
     this.stopBreathCycle();
     this.clearScheduledCheckpoints();
     this.stopEncouragement();
@@ -736,6 +744,8 @@ class PlankApp {
   }
 
   startCountdown() {
+    if (this.state.intervalId) return;
+
     this.state.intervalId = setInterval(() => {
       this.state.timeLeft--;
       this.updateDisplay();
@@ -770,22 +780,25 @@ class PlankApp {
       this.setBreathPhase('inhale', '吸气...');
       this.animateBreathRing(1, 1.2, INHALE_TIME, 'ease-in-out');
 
-      this.state.breathTimeoutId = setTimeout(() => {
+      const inhaleTimeout = setTimeout(() => {
         if (!this.state.isRunning) return;
         this.setBreathPhase('hold', '屏息...');
 
-        this.state.breathTimeoutId = setTimeout(() => {
+        const holdTimeout = setTimeout(() => {
           if (!this.state.isRunning) return;
           this.setBreathPhase('exhale', '呼气...');
           this.animateBreathRing(1.2, 1, EXHALE_TIME, 'ease-in-out');
 
-          this.state.breathTimeoutId = setTimeout(() => {
+          const exhaleTimeout = setTimeout(() => {
             if (!this.state.isRunning) return;
             this.setBreathPhase('ready', '');
             breathe();
           }, EXHALE_TIME);
+          this.state.breathTimeoutIds.push(exhaleTimeout);
         }, HOLD_TIME);
+        this.state.breathTimeoutIds.push(holdTimeout);
       }, INHALE_TIME);
+      this.state.breathTimeoutIds.push(inhaleTimeout);
     };
 
     breathe();
@@ -837,6 +850,10 @@ class PlankApp {
   }
 
   stopBreathCycle() {
+    for (const id of this.state.breathTimeoutIds) {
+      clearTimeout(id);
+    }
+    this.state.breathTimeoutIds = [];
     this.els.breathRing.classList.remove('inhale');
     this.els.breathRing.style.transform = 'scale(1)';
     this.els.breathRing.style.boxShadow = 'none';
@@ -971,7 +988,7 @@ class PlankApp {
   complete() {
     this.state.isRunning = false;
     clearInterval(this.state.intervalId);
-    clearTimeout(this.state.breathTimeoutId);
+    this.state.intervalId = null;
     this.stopBreathCycle();
     this.stopGuide();
 
@@ -1027,7 +1044,7 @@ class PlankApp {
     this.els.progressRingFill.style.strokeDashoffset = 0;
   }
 
-  updateCompletionStats(pausedCount, pausedTime, actualTime) {
+  updateCompletionStats(pausedCount, pausedTime, _actualTime) {
     const statsEl = this.els.completionStats;
     if (pausedCount === 0) {
       statsEl.textContent = `完美完成 🎯`;
@@ -1229,12 +1246,6 @@ class PlankApp {
       this.els.leaderboardList.innerHTML = '<div class="leaderboard-empty">暂无排行数据</div>';
       return;
     }
-
-    const typeLabels = {
-      'total_duration': '总时长',
-      'total_sessions': '总次数',
-      'week_duration': '本周时长'
-    };
 
     this.els.leaderboardList.innerHTML = `
       <div class="leaderboard-type-selector">
@@ -1489,6 +1500,19 @@ class PlankApp {
       osc.stop(startTime + 0.3);
     });
   }
+
+  destroy() {
+    if (this.authSubscription) {
+      this.authSubscription.unsubscribe();
+      this.authSubscription = null;
+    }
+    window.removeEventListener('online', this._onlineHandler);
+    this.stopSyncRetry();
+    if (this.trendChartInstance) {
+      this.trendChartInstance.destroy();
+      this.trendChartInstance = null;
+    }
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1497,7 +1521,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    navigator.serviceWorker.register('sw.js').catch(err => {
+      console.warn('[App] Service worker registration failed:', err.message);
+    });
   });
 
   let refreshing = false;
@@ -1510,6 +1536,8 @@ if ('serviceWorker' in navigator) {
   setInterval(() => {
     navigator.serviceWorker.register('sw.js').then((reg) => {
       reg.update();
-    }).catch(() => {});
+    }).catch(err => {
+      console.warn('[App] Service worker update failed:', err.message);
+    });
   }, SW_UPDATE_INTERVAL);
 }
