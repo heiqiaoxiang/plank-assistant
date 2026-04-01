@@ -1,5 +1,7 @@
 import { supabase, STORAGE_KEY } from '../lib/supabase.js';
 import { signInWithEmail, signUpWithEmail, signOut as authSignOut } from '../lib/auth.js';
+import { voiceManager } from '../lib/voice.js';
+import { i18n } from '../i18n/index.js';
 import Chart from 'chart.js/auto';
 // === Constants ===
 const INHALE_TIME = 4000;
@@ -104,8 +106,63 @@ class PlankApp {
     this.updateStats();
     this.renderModeSelector();
     this.updateUserBtn();
+    this.initI18n();
+    this.initVoice();
 
     this.initSupabase();
+  }
+
+  async initI18n() {
+    await i18n.init();
+    this.applyI18n();
+  }
+
+  applyI18n() {
+    document.querySelectorAll('.mode-option span:last-child').forEach(el => {
+      const mode = el.closest('.mode-option')?.dataset.mode;
+      if (mode) {
+        el.textContent = i18n.t(`modes.${mode}`);
+      }
+    });
+
+    const modeText = this.els.modeText;
+    if (modeText) {
+      modeText.textContent = i18n.t(`modes.${this.state.mode}`);
+    }
+
+    this.els.presets.forEach(preset => {
+      const time = preset.dataset.time;
+      if (time === 'custom') {
+        preset.textContent = i18n.t('presets.custom');
+      }
+    });
+
+    this.els.breathText.textContent = i18n.t('timer.status.ready');
+    this.els.todayCount.closest('.stat-item')?.querySelector('.stat-label') && 
+      (this.els.todayCount.closest('.stat-item').querySelector('.stat-label').textContent = i18n.t('stats.today'));
+    this.els.weekCount.closest('.stat-item')?.querySelector('.stat-label') && 
+      (this.els.weekCount.closest('.stat-item').querySelector('.stat-label').textContent = i18n.t('stats.week'));
+    this.els.totalTime.closest('.stat-item')?.querySelector('.stat-label') && 
+      (this.els.totalTime.closest('.stat-item').querySelector('.stat-label').textContent = i18n.t('stats.total'));
+
+    this.els.startBtn.textContent = i18n.t('controls.start');
+
+    if (this.els.loginTitle) {
+      this.els.loginTitle.textContent = i18n.t('leaderboard.loginRequired');
+    }
+
+    document.title = i18n.t('app.title');
+  }
+
+  async initVoice() {
+    await voiceManager.init();
+    this.els.voiceEnabled.checked = voiceManager.enabled;
+    this.els.voiceType.value = voiceManager.language;
+
+    const currentLangBtn = document.querySelector(`.lang-btn[data-lang="${i18n.getLocale()}"]`);
+    if (currentLangBtn) {
+      currentLangBtn.classList.add('active');
+    }
   }
 
   loadPendingSync() {
@@ -334,10 +391,20 @@ class PlankApp {
       loginClose: document.getElementById('loginClose'),
       loginError: document.getElementById('loginError'),
       loginTitle: document.getElementById('loginTitle'),
-      userBtn: document.getElementById('userBtn'),
-      userModal: document.getElementById('userModal'),
-      userModalClose: document.getElementById('userModalClose'),
-      userEmail: document.getElementById('userEmail'),
+      userBtn: document.getElementById('settingsBtn'),
+      settingsOverlay: document.getElementById('settingsOverlay'),
+      settingsClose: document.getElementById('settingsClose'),
+      settingsTabs: document.querySelectorAll('.settings-tab'),
+      profileSection: document.getElementById('profileSection'),
+      settingsSection: document.getElementById('settingsSection'),
+      profileNickname: document.getElementById('profileNickname'),
+      profileEmail: document.getElementById('profileEmail'),
+      profileTotalSessions: document.getElementById('profileTotalSessions'),
+      profileTotalTime: document.getElementById('profileTotalTime'),
+      profileAvatar: document.getElementById('profileAvatar'),
+      voiceEnabled: document.getElementById('voiceEnabled'),
+      voiceType: document.getElementById('voiceType'),
+      langBtns: document.querySelectorAll('.lang-btn'),
       logoutBtn: document.getElementById('logoutBtn')
     };
   }
@@ -435,13 +502,38 @@ class PlankApp {
       if (e.key === 'Enter') this.handleLoginSubmit();
     });
 
-    this.els.userBtn.addEventListener('click', () => this.showUserModal());
-    this.els.userModalClose.addEventListener('click', () => this.hideUserModal());
-    this.els.userModal.addEventListener('click', (e) => {
-      if (e.target === this.els.userModal) {
-        this.hideUserModal();
+    this.els.userBtn.addEventListener('click', () => this.showSettings());
+    this.els.settingsClose.addEventListener('click', () => this.hideSettings());
+    this.els.settingsOverlay.addEventListener('click', (e) => {
+      if (e.target === this.els.settingsOverlay) {
+        this.hideSettings();
       }
     });
+
+    this.els.settingsTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        this.switchSettingsTab(tab.dataset.tab);
+      });
+    });
+
+    this.els.profileNickname.addEventListener('change', (e) => {
+      this.saveNickname(e.target.value);
+    });
+
+    this.els.langBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.changeLanguage(btn.dataset.lang);
+      });
+    });
+
+    this.els.voiceEnabled.addEventListener('change', (e) => {
+      voiceManager.setEnabled(e.target.checked);
+    });
+
+    this.els.voiceType.addEventListener('change', (e) => {
+      voiceManager.setLanguage(e.target.value);
+    });
+
     this.els.logoutBtn.addEventListener('click', () => this.handleLogout());
   }
 
@@ -846,13 +938,8 @@ class PlankApp {
   }
 
   speakGuide(text) {
-    if (!('speechSynthesis' in window)) return;
-    speechSynthesis.cancel();
-    const utt = new SpeechSynthesisUtterance(text);
-    utt.lang = 'zh-CN';
-    utt.rate = 1.1;
-    utt.pitch = 1;
-    speechSynthesis.speak(utt);
+    if (!voiceManager.isSupported()) return;
+    voiceManager.speak(text);
   }
 
   showEncouragement() {
@@ -1046,28 +1133,87 @@ class PlankApp {
   }
 
   updateUserBtn() {
+    this.els.userBtn.style.display = 'flex';
+    this.updateProfileInfo();
+  }
+
+  updateProfileInfo() {
     const isEmailUser = this.isEmailUserLoggedIn();
-    this.els.userBtn.style.display = isEmailUser ? 'flex' : 'none';
+    
     if (isEmailUser && supabase) {
       const user = supabase.auth.session()?.user;
-      this.els.userEmail.textContent = user?.email || '用户';
+      this.els.profileEmail.textContent = user?.email || '';
+      this.els.profileEmail.style.display = 'block';
+    } else {
+      this.els.profileEmail.textContent = i18n.t('leaderboard.loginRequired');
+      this.els.profileEmail.style.display = 'block';
+    }
+
+    this.els.profileTotalSessions.textContent = this.data.history?.length || 0;
+    const totalMinutes = Math.floor((this.data.totalTime || 0) / 60);
+    this.els.profileTotalTime.textContent = `${totalMinutes}m`;
+
+    this.els.logoutBtn.style.display = isEmailUser ? 'block' : 'none';
+  }
+
+  showSettings() {
+    this.updateUserBtn();
+    this.switchSettingsTab('profile');
+    this.els.settingsOverlay.classList.add('show');
+  }
+
+  hideSettings() {
+    this.els.settingsOverlay.classList.remove('show');
+  }
+
+  switchSettingsTab(tabName) {
+    this.els.settingsTabs.forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.tab === tabName);
+    });
+    
+    if (tabName === 'profile') {
+      this.els.profileSection.style.display = 'block';
+      this.els.settingsSection.style.display = 'none';
+    } else {
+      this.els.profileSection.style.display = 'none';
+      this.els.settingsSection.style.display = 'block';
     }
   }
 
-  showUserModal() {
-    this.updateUserBtn();
-    this.els.userModal.classList.add('show');
+  async changeLanguage(lang) {
+    await i18n.setLocale(lang);
+    
+    this.els.langBtns.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.lang === lang);
+    });
+    
+    this.applyI18n();
   }
 
-  hideUserModal() {
-    this.els.userModal.classList.remove('show');
+  async saveNickname(nickname) {
+    const trimmed = nickname.trim();
+    if (trimmed.length === 0) return;
+
+    this.data.nickname = trimmed;
+    this.saveData();
+
+    if (this.isEmailUserLoggedIn() && supabase) {
+      try {
+        await supabase.from('profiles').upsert({
+          id: this.userId,
+          nickname: trimmed
+        });
+      } catch (e) {
+        console.warn('[App] Failed to save nickname:', e);
+      }
+    }
   }
 
   async handleLogout() {
     if (supabase) {
       await authSignOut();
     }
-    this.hideUserModal();
+    this.hideSettings();
     this.updateUserBtn();
   }
 

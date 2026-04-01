@@ -19,8 +19,8 @@
         <span class="mode-icon">◎</span>
         <span class="mode-text" id="modeText">经典平板支撑</span>
       </button>
-      <button class="user-btn" id="userBtn" aria-label="用户中心" style="display:none;">
-        <span class="user-icon">👤</span>
+      <button class="settings-btn" id="settingsBtn" aria-label="设置">
+        <span class="settings-icon">⚙️</span>
       </button>
       <div class="sync-indicator" id="syncIndicator" style="display:none;"></div>
     </header>
@@ -69,11 +69,11 @@
       <div class="action-buttons">
         <button class="action-btn" id="historyBtn">
           <span class="action-icon">📋</span>
-          <span class="action-text">训练记录</span>
+          <span class="action-text" data-i18n="actions.history">训练记录</span>
         </button>
         <button class="action-btn" id="leaderboardBtn">
           <span class="action-icon">🏆</span>
-          <span class="action-text">排行</span>
+          <span class="action-text" data-i18n="actions.leaderboard">排行</span>
         </button>
       </div>
     </main>
@@ -158,18 +158,82 @@
       </div>
     </div>
 
-    <div class="user-modal" id="userModal">
-      <div class="user-modal-content">
-        <div class="user-modal-header">
-          <h3>用户中心</h3>
-          <button class="user-modal-close" id="userModalClose">×</button>
+    <div class="settings-overlay" id="settingsOverlay">
+      <div class="settings-content">
+        <div class="settings-header">
+          <div class="settings-tabs">
+            <button class="settings-tab active" data-tab="profile" data-i18n="settings.tabs.profile">个人</button>
+            <button class="settings-tab" data-tab="settings" data-i18n="settings.tabs.settings">设置</button>
+          </div>
+          <button class="settings-close" id="settingsClose">×</button>
         </div>
-        <div class="user-info">
-          <div class="user-avatar" id="userAvatar">👤</div>
-          <div class="user-email" id="userEmail">user@example.com</div>
-        </div>
-        <div class="user-actions">
-          <button class="btn btn-secondary" id="logoutBtn">退出登录</button>
+        
+        <div class="settings-scroll">
+          <div class="settings-section" id="profileSection">
+            <div class="profile-header">
+              <div class="profile-avatar-wrapper">
+                <div class="profile-avatar" id="profileAvatar">👤</div>
+              </div>
+              <div class="profile-info">
+                <input type="text" class="profile-nickname" id="profileNickname" 
+                       data-i18n-placeholder="settings.nickname" placeholder="设置昵称" maxlength="20">
+              </div>
+            </div>
+            <div class="profile-stats">
+              <div class="profile-stat">
+                <span class="stat-num" id="profileTotalSessions">0</span>
+                <span class="stat-label" data-i18n="settings.sessions">训练次数</span>
+              </div>
+              <div class="profile-stat">
+                <span class="stat-num" id="profileTotalTime">0m</span>
+                <span class="stat-label" data-i18n="settings.totalTime">累计时长</span>
+              </div>
+            </div>
+            <div class="profile-email" id="profileEmail"></div>
+          </div>
+          
+          <div class="settings-section" id="settingsSection" style="display:none;">
+            <div class="settings-group">
+              <div class="settings-group-title" data-i18n="settings.language">语言</div>
+              <div class="language-selector">
+                <button class="lang-btn" data-lang="zh">
+                  <span class="lang-name">简体中文</span>
+                </button>
+                <button class="lang-btn" data-lang="en">
+                  <span class="lang-name">English</span>
+                </button>
+                <button class="lang-btn" data-lang="yue">
+                  <span class="lang-name">粤语</span>
+                </button>
+              </div>
+            </div>
+            
+            <div class="settings-group">
+              <div class="settings-group-title" data-i18n="settings.voice">语音播报</div>
+              <div class="settings-row">
+                <span data-i18n="settings.voiceEnabled">启用语音</span>
+                <label class="toggle">
+                  <input type="checkbox" id="voiceEnabled" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div class="settings-row">
+                <span data-i18n="settings.voiceType">播报语言</span>
+                <select id="voiceType" class="settings-select">
+                  <option value="zh" data-i18n="voiceTypes.zh">中文</option>
+                  <option value="en" data-i18n="voiceTypes.en">English</option>
+                  <option value="yue" data-i18n="voiceTypes.yue">粤语</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="settings-group">
+              <div class="settings-group-title" data-i18n="settings.account">账户</div>
+              <button class="settings-action-btn danger" id="logoutBtn" data-i18n="settings.logout">
+                退出登录
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -178,6 +242,8 @@
   <script type="module" src="src/lib/supabase.js"></script>
   <script type="module" src="src/lib/auth.js"></script>
   <script type="module" src="src/lib/database.js"></script>
+  <script type="module" src="src/lib/voice.js"></script>
+  <script type="module" src="src/i18n/index.js"></script>
   <script type="module" src="src/core/app.js"></script>
 </body>
 </html>
