@@ -904,7 +904,8 @@ class PlankApp {
       pausedCount,
       pausedTime,
       pausedIntervals: [...this.state.pausedIntervals],
-      actualTime
+      actualTime,
+      restDuration: pausedTime
     });
     if (this.data.history.length > HISTORY_LIMIT) {
       this.data.history = this.data.history.slice(-HISTORY_LIMIT);
@@ -1241,6 +1242,7 @@ class PlankApp {
           y: {
             type: 'linear',
             position: 'left',
+            beginAtZero: true,
             grid: { color: '#2a2a2a' },
             ticks: { color: '#00d4aa', font: { size: 10 } },
             title: { display: true, text: '次数', color: '#00d4aa', font: { size: 10 } }
