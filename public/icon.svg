@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 背景 -->
+  <rect width="512" height="512" rx="64" fill="#0a0a0a"/>
+  
+  <!-- 平板支撑人形 -->
+  <g transform="translate(256, 280)">
+    <!-- 身体线条 -->
+    <path d="M-80 20 L-40 0 L0 -10 L40 0 L80 20" 
+          stroke="#00d4ff" stroke-width="24" stroke-linecap="round" fill="none"/>
+    <!-- 头部 -->
+    <circle cx="-80" cy="20" r="28" fill="#00d4ff"/>
+    <!-- 手臂 -->
+    <line x1="-40" y1="0" x2="-40" y2="50" stroke="#00d4ff" stroke-width="16" stroke-linecap="round"/>
+    <!-- 腿部 -->
+    <line x1="40" y1="0" x2="40" y2="50" stroke="#00d4ff" stroke-width="16" stroke-linecap="round"/>
+  </g>
+</svg>
