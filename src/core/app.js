@@ -107,11 +107,15 @@ class PlankApp {
     this.bindEvents();
     this.updateStats();
     this.renderModeSelector();
-    this.updateUserBtn();
     this.initI18n();
     this.initVoice();
 
-    this.initSupabase();
+    this.init();
+  }
+
+  async init() {
+    await this.updateUserBtn();
+    await this.initSupabase();
   }
 
   async initI18n() {
@@ -207,7 +211,7 @@ class PlankApp {
           await this.syncPendingSessions();
           await this.mergeCloudStats();
         }
-        this.updateUserBtn();
+        await this.updateUserBtn();
       });
       this.authSubscription = data.subscription;
 
@@ -413,7 +417,9 @@ class PlankApp {
       voiceEnabled: document.getElementById('voiceEnabled'),
       voiceType: document.getElementById('voiceType'),
       langBtns: document.querySelectorAll('.lang-btn'),
-      logoutBtn: document.getElementById('logoutBtn')
+      logoutBtn: document.getElementById('logoutBtn'),
+      leaderboardOverlay: document.getElementById('leaderboardOverlay'),
+      leaderboardClose: document.getElementById('leaderboardClose')
     };
   }
 
@@ -467,9 +473,10 @@ class PlankApp {
       this.showHistoryTab('history');
     });
 
-    this.els.leaderboardBtn.addEventListener('click', () => {
-      if (this.isEmailUserLoggedIn()) {
-        this.showHistoryTab('leaderboard');
+    this.els.leaderboardBtn.addEventListener('click', async () => {
+      const isLoggedIn = await this.isEmailUserLoggedIn();
+      if (isLoggedIn) {
+        this.showLeaderboard();
       } else {
         this.showLoginModal();
       }
@@ -543,6 +550,13 @@ class PlankApp {
     });
 
     this.els.logoutBtn.addEventListener('click', () => this.handleLogout());
+
+    this.els.leaderboardClose.addEventListener('click', () => this.hideLeaderboard());
+    this.els.leaderboardOverlay.addEventListener('click', (e) => {
+      if (e.target === this.els.leaderboardOverlay) {
+        this.hideLeaderboard();
+      }
+    });
   }
 
   loadData() {
@@ -1084,9 +1098,18 @@ class PlankApp {
     this.els.historyOverlay.classList.remove('show');
   }
 
-  isEmailUserLoggedIn() {
+  showLeaderboard() {
+    this.els.leaderboardOverlay.classList.add('show');
+    this.loadLeaderboard();
+  }
+
+  hideLeaderboard() {
+    this.els.leaderboardOverlay.classList.remove('show');
+  }
+
+  async isEmailUserLoggedIn() {
     if (!supabase) return false;
-    const session = supabase.auth?.session;
+    const { data: { session } } = await supabase.auth.getSession();
     if (!session) return false;
     const user = session.user;
     return user && user.email && !user.is_anonymous;
@@ -1137,8 +1160,8 @@ class PlankApp {
     }
 
     this.hideLoginModal();
-    this.updateUserBtn();
-    this.showHistoryTab('leaderboard');
+    await this.updateUserBtn();
+    this.showLeaderboard();
   }
 
   handleLoginSwitch() {
@@ -1149,17 +1172,17 @@ class PlankApp {
     this.els.loginSwitchBtn.textContent = this.state.isLoginMode ? '注册' : '登录';
   }
 
-  updateUserBtn() {
+  async updateUserBtn() {
     this.els.userBtn.style.display = 'flex';
-    this.updateProfileInfo();
+    await this.updateProfileInfo();
   }
 
-  updateProfileInfo() {
-    const isEmailUser = this.isEmailUserLoggedIn();
+  async updateProfileInfo() {
+    const isEmailUser = await this.isEmailUserLoggedIn();
     
     if (isEmailUser && supabase) {
-      const user = supabase.auth.session()?.user;
-      this.els.profileEmail.textContent = user?.email || '';
+      const { data: { session } } = await supabase.auth.getSession();
+      this.els.profileEmail.textContent = session?.user?.email || '';
       this.els.profileEmail.style.display = 'block';
     } else {
       this.els.profileEmail.textContent = i18n.t('leaderboard.loginRequired');
@@ -1173,8 +1196,8 @@ class PlankApp {
     this.els.logoutBtn.style.display = isEmailUser ? 'block' : 'none';
   }
 
-  showSettings() {
-    this.updateUserBtn();
+  async showSettings() {
+    await this.updateUserBtn();
     this.switchSettingsTab('profile');
     this.els.settingsOverlay.classList.add('show');
   }
@@ -1214,7 +1237,8 @@ class PlankApp {
     this.data.nickname = trimmed;
     this.saveData();
 
-    if (this.isEmailUserLoggedIn() && supabase) {
+    const isEmailUser = await this.isEmailUserLoggedIn();
+    if (isEmailUser && supabase) {
       try {
         await supabase.from('profiles').upsert({
           id: this.userId,
@@ -1231,7 +1255,7 @@ class PlankApp {
       await authSignOut();
     }
     this.hideSettings();
-    this.updateUserBtn();
+    await this.updateUserBtn();
   }
 
   async loadLeaderboard(type = 'total_duration') {

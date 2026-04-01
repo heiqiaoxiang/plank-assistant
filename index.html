@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="description" content="专注、高效的平板支撑训练助手">
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏋️</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧘</text></svg>">
   <title>Plank - 平板支撑助手</title>
   <link rel="stylesheet" href="src/styles/main.css">
 </head>
@@ -19,8 +19,8 @@
         <span class="mode-icon">◎</span>
         <span class="mode-text" id="modeText">经典平板支撑</span>
       </button>
-      <button class="settings-btn" id="settingsBtn" aria-label="设置">
-        <span class="settings-icon">⚙️</span>
+      <button class="settings-btn" id="settingsBtn" aria-label="个人中心">
+        <span class="settings-icon">👤</span>
       </button>
       <div class="sync-indicator" id="syncIndicator" style="display:none;"></div>
     </header>
@@ -122,17 +122,25 @@
       <div class="history-content">
         <div class="history-header">
           <div class="history-tabs">
-            <button class="history-tab active" data-tab="history">训练记录</button>
-            <button class="history-tab" data-tab="trend">趋势</button>
-            <button class="history-tab" data-tab="leaderboard">排行</button>
+            <button class="history-tab active" data-tab="history" type="button">训练记录</button>
+            <button class="history-tab" data-tab="trend" type="button">趋势</button>
           </div>
-          <button class="history-close" id="historyClose">×</button>
+          <button class="history-close" id="historyClose" type="button">×</button>
         </div>
         <div class="history-list" id="historyList"></div>
         <div class="trend-panel" id="trendPanel" style="display:none;">
           <canvas id="trendChart"></canvas>
         </div>
-        <div class="leaderboard-list" id="leaderboardList" style="display:none;"></div>
+      </div>
+    </div>
+
+    <div class="leaderboard-overlay" id="leaderboardOverlay">
+      <div class="leaderboard-content">
+        <div class="history-header">
+          <h3 style="color: var(--text); font-size: 18px; font-weight: 600;">排行榜</h3>
+          <button class="history-close" id="leaderboardClose" type="button">×</button>
+        </div>
+        <div class="leaderboard-list" id="leaderboardList"></div>
       </div>
     </div>
 
