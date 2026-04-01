@@ -537,6 +537,33 @@ body {
   75% { transform: translateX(-50%) translateX(5px); }
 }
 
+/* Guide Card */
+.guide-card {
+  position: absolute;
+  bottom: -60px;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: linear-gradient(135deg, var(--primary-dim), var(--surface));
+  border: 1px solid var(--primary);
+  border-radius: 20px;
+  padding: 12px 20px;
+  max-width: 300px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.4s ease-out, transform 0.4s ease-out, visibility 0.4s;
+  box-shadow: 0 4px 20px rgba(0, 212, 170, 0.2);
+  text-align: center;
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.guide-card.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
 body {
   user-select: none;
   -webkit-user-select: none;

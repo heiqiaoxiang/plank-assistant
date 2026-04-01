@@ -54,6 +54,22 @@ const checkpointMessages = [
   '检查：呼吸节奏'
 ];
 
+const guideMessages = [
+  '腰酸了？假装有人朝你肚子泼水，腹肌瞬间收紧 💪',
+  '腰塌了？想象头顶有绳子把你往上拽，保持挺直！',
+  '腹部没感觉？肚脐向脊柱收紧，像穿紧身衣！',
+  '臀部翘起来了？收紧找憋尿的感觉，马上归位！',
+  '肩膀酸了？把肩胛骨向臀部推送，瞬间放松！',
+  '肩膀耸起来了？让肩膀远离耳朵，保持下沉！',
+  '脖子累了？下巴轻夹隐形网球，目视地面！',
+  '喘不上气？用嘴像吸管吸气，缓慢呼出！',
+  '手肘疼？前臂垫个毛巾，缓冲一下！',
+  '身体晃了？双脚与肩同宽，像木桩一样站稳！'
+];
+
+const GUIDE_INTERVAL = 15000;
+const GUIDE_DISPLAY_TIME = 5000;
+
 class PlankApp {
   constructor() {
     this.state = {
@@ -71,6 +87,8 @@ class PlankApp {
       checkpointTimeoutIds: [],
       encouragementIntervalId: null,
       autoCloseTimeout: null,
+      guideIntervalId: null,
+      guideTimeoutId: null,
       isLoginMode: true,
       syncRetryIntervalId: null,
       isSyncing: false
@@ -300,12 +318,14 @@ class PlankApp {
       historyList: document.getElementById('historyList'),
       historyClose: document.getElementById('historyClose'),
       trendPanel: document.getElementById('trendPanel'),
+      trendChart: document.getElementById('trendChart'),
       statsPanel: document.getElementById('statsPanel'),
       progressRingFill: document.getElementById('progressRingFill'),
       leaderboardList: document.getElementById('leaderboardList'),
       pauseIndicator: document.getElementById('pauseIndicator'),
       historyBtn: document.getElementById('historyBtn'),
       leaderboardBtn: document.getElementById('leaderboardBtn'),
+      guideCard: document.getElementById('guideCard'),
       loginModal: document.getElementById('loginModal'),
       loginEmail: document.getElementById('loginEmail'),
       loginPassword: document.getElementById('loginPassword'),
@@ -578,6 +598,7 @@ class PlankApp {
     this.startCountdown();
     this.scheduleCheckpoints();
     this.startEncouragement();
+    this.startGuide();
     this.updateProgressRing();
   }
 
@@ -594,6 +615,7 @@ class PlankApp {
     this.stopBreathCycle();
     this.clearScheduledCheckpoints();
     this.stopEncouragement();
+    this.stopGuide();
   }
 
   reset() {
@@ -610,6 +632,7 @@ class PlankApp {
     this.stopBreathCycle();
     this.clearScheduledCheckpoints();
     this.stopEncouragement();
+    this.stopGuide();
 
     this.els.startBtn.textContent = '开始';
     this.els.timerDisplay.classList.remove('running', 'warning');
@@ -790,6 +813,48 @@ class PlankApp {
     }
   }
 
+  startGuide() {
+    this.stopGuide();
+    const showNextGuide = () => {
+      if (!this.state.isRunning) return;
+      this.showGuide();
+      this.state.guideIntervalId = setTimeout(showNextGuide, GUIDE_INTERVAL);
+    };
+    this.state.guideIntervalId = setTimeout(showNextGuide, GUIDE_INTERVAL);
+  }
+
+  stopGuide() {
+    if (this.state.guideIntervalId) {
+      clearTimeout(this.state.guideIntervalId);
+      this.state.guideIntervalId = null;
+    }
+    if (this.state.guideTimeoutId) {
+      clearTimeout(this.state.guideTimeoutId);
+      this.state.guideTimeoutId = null;
+    }
+    this.els.guideCard.classList.remove('show');
+  }
+
+  showGuide() {
+    const text = guideMessages[Math.floor(Math.random() * guideMessages.length)];
+    this.els.guideCard.textContent = text;
+    this.els.guideCard.classList.add('show');
+    this.speakGuide(text);
+    this.state.guideTimeoutId = setTimeout(() => {
+      this.els.guideCard.classList.remove('show');
+    }, GUIDE_DISPLAY_TIME);
+  }
+
+  speakGuide(text) {
+    if (!('speechSynthesis' in window)) return;
+    speechSynthesis.cancel();
+    const utt = new SpeechSynthesisUtterance(text);
+    utt.lang = 'zh-CN';
+    utt.rate = 1.1;
+    utt.pitch = 1;
+    speechSynthesis.speak(utt);
+  }
+
   showEncouragement() {
     const msg = document.createElement('div');
     msg.className = 'checkpoint show';
@@ -821,6 +886,7 @@ class PlankApp {
     clearInterval(this.state.intervalId);
     clearTimeout(this.state.breathTimeoutId);
     this.stopBreathCycle();
+    this.stopGuide();
 
     const completedTime = this.state.duration;
     const pausedCount = this.state.pausedIntervals.length;
