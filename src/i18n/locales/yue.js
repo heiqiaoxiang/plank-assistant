@@ -118,7 +118,8 @@ export default {
     logout: '登出',
     nickname: '設定暱稱',
     sessions: '訓練次數',
-    totalTime: '累計時長'
+    totalTime: '累計時長',
+    guestUser: '遊客用戶'
   },
   languages: {
     zh: '簡體中文',
@@ -148,6 +149,7 @@ export default {
     cancel: '取消'
   },
   errors: {
-    supabaseNotConfigured: 'Supabase 未配置'
+    supabaseNotConfigured: 'Supabase 未配置',
+    logoutFailed: '登出失敗，請重試'
   }
 };

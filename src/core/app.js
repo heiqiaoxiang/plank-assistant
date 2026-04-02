@@ -87,6 +87,7 @@ class PlankApp {
       pausedIntervals: [],
       totalPausedTime: 0,
       checkpointTimeoutIds: [],
+      encouragementTimeoutId: null,
       encouragementIntervalId: null,
       autoCloseTimeout: null,
       guideIntervalId: null,
@@ -100,8 +101,9 @@ class PlankApp {
     this.userId = null;
     this.data = this.loadData();
     this.syncPending = this.loadPendingSync();
-    this.authSubscription = null;  // For Supabase auth subscription cleanup
-    this.syncLock = false;  // Mutex for sync operations
+    this.authSubscription = null;
+    this.syncLock = false;
+    this.saveNicknameDebounced = this.debounce((nickname) => this.saveNickname(nickname), 500);
 
     this.initElements();
     this.bindEvents();
@@ -406,6 +408,7 @@ class PlankApp {
       userBtn: document.getElementById('settingsBtn'),
       settingsOverlay: document.getElementById('settingsOverlay'),
       settingsClose: document.getElementById('settingsClose'),
+      settingsHeader: document.querySelector('.settings-header'),
       settingsTabs: document.querySelectorAll('.settings-tab'),
       profileSection: document.getElementById('profileSection'),
       settingsSection: document.getElementById('settingsSection'),
@@ -525,14 +528,15 @@ class PlankApp {
       }
     });
 
-    this.els.settingsTabs.forEach(tab => {
-      tab.addEventListener('click', () => {
+    this.els.settingsHeader.addEventListener('click', (e) => {
+      const tab = e.target.closest('.settings-tab');
+      if (tab) {
         this.switchSettingsTab(tab.dataset.tab);
-      });
+      }
     });
 
     this.els.profileNickname.addEventListener('change', (e) => {
-      this.saveNickname(e.target.value);
+      this.saveNicknameDebounced(e.target.value);
     });
 
     this.els.langBtns.forEach(btn => {
@@ -916,7 +920,7 @@ class PlankApp {
     this.stopEncouragement();
     if (this.state.duration < MIN_DURATION_FOR_ENCOURAGEMENT) return;
 
-    const timeoutId = setTimeout(() => {
+    this.state.encouragementTimeoutId = setTimeout(() => {
       if (this.state.isRunning) {
         this.showEncouragement();
         this.state.encouragementIntervalId = setInterval(() => {
@@ -926,10 +930,13 @@ class PlankApp {
         }, ENCOURAGEMENT_INTERVAL);
       }
     }, ENCOURAGEMENT_FIRST_DELAY);
-    this.state.checkpointTimeoutIds.push(timeoutId);
   }
 
   stopEncouragement() {
+    if (this.state.encouragementTimeoutId) {
+      clearTimeout(this.state.encouragementTimeoutId);
+      this.state.encouragementTimeoutId = null;
+    }
     if (this.state.encouragementIntervalId) {
       clearInterval(this.state.encouragementIntervalId);
       this.state.encouragementIntervalId = null;
@@ -1179,15 +1186,35 @@ class PlankApp {
 
   async updateProfileInfo() {
     const isEmailUser = await this.isEmailUserLoggedIn();
-    
-    if (isEmailUser && supabase) {
+
+    let nickname = this.data.nickname || '';
+
+    if (isEmailUser && supabase && this.userId) {
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('nickname')
+          .eq('id', this.userId)
+          .single();
+
+        if (profile?.nickname) {
+          nickname = profile.nickname;
+          this.data.nickname = nickname;
+          this.saveData();
+        }
+      } catch (e) {
+        // Silent fail: use local nickname
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       this.els.profileEmail.textContent = session?.user?.email || '';
       this.els.profileEmail.style.display = 'block';
     } else {
-      this.els.profileEmail.textContent = i18n.t('leaderboard.loginRequired');
+      this.els.profileEmail.textContent = i18n.t('settings.guestUser');
       this.els.profileEmail.style.display = 'block';
     }
+
+    this.els.profileNickname.value = nickname;
 
     this.els.profileTotalSessions.textContent = this.data.history?.length || 0;
     const totalMinutes = Math.floor((this.data.totalTime || 0) / 60);
@@ -1204,6 +1231,10 @@ class PlankApp {
 
   hideSettings() {
     this.els.settingsOverlay.classList.remove('show');
+    if (this.trendChartInstance) {
+      this.trendChartInstance.destroy();
+      this.trendChartInstance = null;
+    }
   }
 
   switchSettingsTab(tabName) {
@@ -1251,11 +1282,30 @@ class PlankApp {
   }
 
   async handleLogout() {
-    if (supabase) {
-      await authSignOut();
+    try {
+      if (supabase) {
+        await authSignOut();
+      }
+
+      this.userId = null;
+      this.data.nickname = '';
+      this.saveData();
+
+      this.syncPending = [];
+      this.savePendingSync();
+
+      this.stopSyncRetry();
+
+      if (supabase) {
+        await this.signInAnonymously();
+      }
+
+      this.hideSettings();
+      await this.updateUserBtn();
+    } catch (err) {
+      console.error('[App] Logout failed:', err.message);
+      alert(i18n.t('errors.logoutFailed') || '退出登录失败，请重试');
     }
-    this.hideSettings();
-    await this.updateUserBtn();
   }
 
   async loadLeaderboard(type = 'total_duration') {
@@ -1523,6 +1573,18 @@ class PlankApp {
       osc.start(startTime);
       osc.stop(startTime + 0.3);
     });
+  }
+
+  debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
   }
 
   destroy() {

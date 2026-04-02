@@ -118,7 +118,8 @@ export default {
     logout: 'Sign Out',
     nickname: 'Set Nickname',
     sessions: 'Sessions',
-    totalTime: 'Total Time'
+    totalTime: 'Total Time',
+    guestUser: 'Guest User'
   },
   languages: {
     zh: '简体中文',
@@ -148,6 +149,7 @@ export default {
     cancel: 'Cancel'
   },
   errors: {
-    supabaseNotConfigured: 'Supabase not configured'
+    supabaseNotConfigured: 'Supabase not configured',
+    logoutFailed: 'Logout failed, please try again'
   }
 };

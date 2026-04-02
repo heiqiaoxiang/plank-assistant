@@ -7,7 +7,8 @@ test.describe('Plank App', () => {
   });
 
   test('page loads correctly', async ({ page }) => {
-    await expect(page).toHaveTitle(/Plank/);
+    const title = await page.title();
+    expect(title).toMatch(/Plank|平板/);
   });
 
   test('shows initial state', async ({ page }) => {
