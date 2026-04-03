@@ -3,74 +3,15 @@ import { signInWithEmail, signUpWithEmail, signOut as authSignOut } from '../lib
 import { voiceManager } from '../lib/voice.js';
 import { i18n } from '../i18n/index.js';
 import Chart from 'chart.js/auto';
-// === Constants ===
-const INHALE_TIME = 4000;
-const HOLD_TIME = 2000;
-const EXHALE_TIME = 4000;
-const PROGRESS_RING_CIRCUMFERENCE = 2 * Math.PI * 135;
-
-// History
-const HISTORY_LIMIT = 100; // Max records to keep
-
-// Encouragement
-const ENCOURAGEMENT_FIRST_DELAY = 15000; // First encouragement at 15s
-const ENCOURAGEMENT_INTERVAL = 30000; // Every 30s after
-const MIN_DURATION_FOR_ENCOURAGEMENT = 60; // Only for sessions >= 60s
-
-// Sync
-const SYNC_RETRY_INTERVAL = 30000; // Retry failed sync every 30s
-const SW_UPDATE_INTERVAL = 60 * 60 * 1000; // Service Worker update every hour
-
-// Checkpoints
-const CHECKPOINT_INTERVAL = 30; // Every 30s
-const CHECKPOINT_FIRST_OFFSET = 5; // First checkpoint 5s before target
-
-const modeNames = {
-  classic: '经典平板支撑',
-  'side-left': '左侧平板支撑',
-  'side-right': '右侧平板支撑'
-};
-
-const completionMessages = [
-  '太棒了！继续保持！',
-  '燃脂成功！💪',
-  '今天的你比昨天更强大！',
-  '核心力量+1！',
-  '健身打卡完成！',
-  '汗水不会骗人！'
-];
-
-const encouragementMessages = [
-  '坚持住！',
-  '加油！',
-  '保持姿势！',
-  '你很棒！',
-  '继续！'
-];
-
-const checkpointMessages = [
-  '检查：臀部位置',
-  '检查：肩部下沉',
-  '检查：核心收紧',
-  '检查：不要塌腰',
-  '检查：呼吸节奏'
-];
-
-const guideMessages = [
-  '腰酸了？假装有人朝你肚子泼水，腹肌瞬间收紧 💪',
-  '腰塌了？想象头顶有绳子把你往上拽，保持挺直！',
-  '腹部没感觉？肚脐向脊柱收紧，像穿紧身衣！',
-  '臀部翘起来了？收紧找憋尿的感觉，马上归位！',
-  '肩膀酸了？把肩胛骨向臀部推送，瞬间放松！',
-  '肩膀耸起来了？让肩膀远离耳朵，保持下沉！',
-  '脖子累了？下巴轻夹隐形网球，目视地面！',
-  '喘不上气？用嘴像吸管吸气，缓慢呼出！',
-  '手肘疼？前臂垫个毛巾，缓冲一下！',
-  '身体晃了？双脚与肩同宽，像木桩一样站稳！'
-];
-
-const GUIDE_INTERVAL = 15000;
-const GUIDE_DISPLAY_TIME = 5000;
+import { AudioManager } from './audio.js';
+import { debounce, getRandomItem } from './utils.js';
+import {
+  INHALE_TIME, HOLD_TIME, EXHALE_TIME, PROGRESS_RING_CIRCUMFERENCE,
+  HISTORY_LIMIT, ENCOURAGEMENT_FIRST_DELAY, ENCOURAGEMENT_INTERVAL,
+  MIN_DURATION_FOR_ENCOURAGEMENT, SYNC_RETRY_INTERVAL, SW_UPDATE_INTERVAL,
+  CHECKPOINT_INTERVAL, CHECKPOINT_FIRST_OFFSET, GUIDE_INTERVAL, GUIDE_DISPLAY_TIME,
+  MODE_NAMES, COMPLETION_MESSAGES, ENCOURAGEMENT_MESSAGES, CHECKPOINT_MESSAGES, GUIDE_MESSAGES
+} from './constants.js';
 
 class PlankApp {
   constructor() {
@@ -97,13 +38,13 @@ class PlankApp {
       isSyncing: false
     };
 
-    this.audioContext = null;
+    this.audioManager = new AudioManager();
     this.userId = null;
     this.data = this.loadData();
     this.syncPending = this.loadPendingSync();
     this.authSubscription = null;
     this.syncLock = false;
-    this.saveNicknameDebounced = this.debounce((nickname) => this.saveNickname(nickname), 500);
+    this.saveNicknameDebounced = debounce((nickname) => this.saveNickname(nickname), 500);
 
     this.initElements();
     this.bindEvents();
@@ -239,7 +180,7 @@ class PlankApp {
       if (error) throw error;
       this.userId = data.user.id;
     } catch (err) {
-      console.warn('Anonymous sign-in failed:', err.message);
+      console.warn('[App] Anonymous sign-in failed:', err.message);
     }
   }
 
@@ -254,28 +195,31 @@ class PlankApp {
     const toSync = [...this.syncPending];
     let hasErrors = false;
 
-    for (const session of toSync) {
-      try {
-        const { error } = await supabase.from('sessions').insert({
-          user_id: session.userId || this.userId,
-          duration: session.duration,
-          mode: session.mode,
-          paused_count: session.pausedCount
-        });
-        if (!error) {
-          this.syncPending = this.syncPending.filter(s => s.date !== session.date);
-        } else {
+    try {
+      for (const session of toSync) {
+        try {
+          const { error } = await supabase.from('sessions').insert({
+            user_id: session.userId || this.userId,
+            duration: session.duration,
+            mode: session.mode,
+            paused_count: session.pausedCount
+          });
+          if (!error) {
+            this.syncPending = this.syncPending.filter(s => s.date !== session.date);
+          } else {
+            hasErrors = true;
+          }
+        } catch (err) {
+          console.warn('[App] Sync failed for session:', err.message);
           hasErrors = true;
         }
-      } catch (err) {
-        console.warn('Sync failed for session:', err.message);
-        hasErrors = true;
       }
+    } finally {
+      this.savePendingSync();
+      this.state.isSyncing = false;
+      this.syncLock = false;
+      this.updateSyncIndicator();
     }
-    this.savePendingSync();
-    this.state.isSyncing = false;
-    this.syncLock = false;
-    this.updateSyncIndicator();
 
     if (hasErrors && this.syncPending.length > 0) {
       this.startSyncRetry();
@@ -321,7 +265,7 @@ class PlankApp {
         }
       }
     } catch (err) {
-      console.warn('Failed to merge cloud stats:', err.message);
+      console.warn('[App] Failed to merge cloud stats:', err.message);
     }
   }
 
@@ -647,7 +591,7 @@ class PlankApp {
 
   selectMode(mode) {
     this.state.mode = mode;
-    this.els.modeText.textContent = modeNames[mode];
+    this.els.modeText.textContent = MODE_NAMES[mode];
     this.els.modeSelector.classList.remove('show');
     this.renderModeSelector();
   }
@@ -674,11 +618,25 @@ class PlankApp {
   }
 
   confirmCustomTime() {
-    const value = parseInt(this.els.customTimeInput.value);
+    const rawValue = this.els.customTimeInput.value.trim();
+    if (!rawValue) {
+      this.hideCustomModal();
+      return;
+    }
+
+    const value = parseInt(rawValue, 10);
+    if (Number.isNaN(value)) {
+      console.warn('[App] Invalid custom time input:', rawValue);
+      this.hideCustomModal();
+      return;
+    }
+
     if (value >= 10 && value <= 600) {
       this.setDuration(value);
       this.els.presets.forEach(p => { p.classList.remove('active'); });
       this.els.presets[4].classList.add('active');
+    } else {
+      console.warn('[App] Custom time out of range:', value);
     }
     this.hideCustomModal();
   }
@@ -772,7 +730,7 @@ class PlankApp {
       if (this.state.timeLeft <= 10 && this.state.timeLeft > 0) {
         this.els.timerDisplay.classList.add('warning');
         this.els.progressRingFill.classList.add('warning');
-        this.playTickSound();
+        this.audioManager.playTickSound();
       }
 
       if (this.state.timeLeft <= 0) {
@@ -906,12 +864,12 @@ class PlankApp {
   showCheckpoint() {
     const checkpoint = document.createElement('div');
     checkpoint.className = 'checkpoint show';
-    const randomMessage = checkpointMessages[Math.floor(Math.random() * checkpointMessages.length)];
+    const randomMessage = getRandomItem(CHECKPOINT_MESSAGES);
     checkpoint.textContent = `📍 ${randomMessage}`;
     checkpoint.style.cssText = 'position:absolute;bottom:30%;left:50%;transform:translateX(-50%);font-size:14px;color:#ff6b6b;opacity:0;animation:checkpoint-pulse 2s ease-out forwards;';
     this.els.breathContainer.style.position = 'relative';
     this.els.breathContainer.appendChild(checkpoint);
-    this.playCheckpointSound();
+    this.audioManager.playCheckpointSound();
 
     setTimeout(() => checkpoint.remove(), 2000);
   }
@@ -966,7 +924,7 @@ class PlankApp {
   }
 
   showGuide() {
-    const text = guideMessages[Math.floor(Math.random() * guideMessages.length)];
+    const text = getRandomItem(GUIDE_MESSAGES);
     this.els.guideCard.textContent = text;
     this.els.guideCard.classList.add('show');
     this.speakGuide(text);
@@ -983,27 +941,13 @@ class PlankApp {
   showEncouragement() {
     const msg = document.createElement('div');
     msg.className = 'checkpoint show';
-    const randomMsg = encouragementMessages[Math.floor(Math.random() * encouragementMessages.length)];
+    const randomMsg = getRandomItem(ENCOURAGEMENT_MESSAGES);
     msg.textContent = `💪 ${randomMsg}`;
     msg.style.cssText = 'position:absolute;bottom:25%;left:50%;transform:translateX(-50%);font-size:16px;color:#00d4aa;opacity:0;animation:checkpoint-pulse 2s ease-out forwards;';
     this.els.breathContainer.appendChild(msg);
-    this.playEncouragementSound();
+    this.audioManager.playEncouragementSound();
 
     setTimeout(() => msg.remove(), 2000);
-  }
-
-  playEncouragementSound() {
-    this.initAudio();
-    const osc = this.audioContext.createOscillator();
-    const gain = this.audioContext.createGain();
-    osc.connect(gain);
-    gain.connect(this.audioContext.destination);
-    osc.frequency.value = 660;
-    osc.type = 'sine';
-    gain.gain.setValueAtTime(0.12, this.audioContext.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.2);
-    osc.start();
-    osc.stop(this.audioContext.currentTime + 0.2);
   }
 
   complete() {
@@ -1046,10 +990,10 @@ class PlankApp {
     });
 
     this.els.completionTime.textContent = `${completedTime}秒`;
-    this.els.completionMessage.textContent = completionMessages[Math.floor(Math.random() * completionMessages.length)];
+    this.els.completionMessage.textContent = getRandomItem(COMPLETION_MESSAGES);
     this.updateCompletionStats(pausedCount, pausedTime, actualTime);
     this.els.completionOverlay.classList.add('show');
-    this.playSuccessSound();
+    this.audioManager.playSuccessSound();
     this.createConfetti();
 
     if (completedTime < 60) {
@@ -1366,7 +1310,7 @@ class PlankApp {
     this.els.historyList.innerHTML = sortedHistory.map(item => {
       const date = new Date(item.date);
       const dateStr = `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
-      const modeText = modeNames[item.mode] || '经典平板支撑';
+      const modeText = MODE_NAMES[item.mode] || '经典平板支撑';
       const pauseText = item.pausedCount > 0 ? `暂停${item.pausedCount}次/${item.pausedTime}s` : '完美';
       const durationText = item.duration + 's';
 
@@ -1503,8 +1447,9 @@ class PlankApp {
   }
 
   createConfetti() {
-    this.els.confetti.innerHTML = '';
+    this.clearConfetti();
     const colors = ['#00d4aa', '#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff'];
+    const fragment = document.createDocumentFragment();
 
     for (let i = 0; i < 30; i++) {
       const particle = document.createElement('div');
@@ -1518,73 +1463,21 @@ class PlankApp {
 
       particle.style.setProperty('--tx', `${tx}px`);
       particle.style.setProperty('--ty', `${ty}px`);
-
-      this.els.confetti.appendChild(particle);
+      fragment.appendChild(particle);
     }
+
+    this.els.confetti.appendChild(fragment);
+    this.confettiCleanupTimeout = setTimeout(() => this.clearConfetti(), 2000);
   }
 
-  initAudio() {
-    if (this.audioContext) return;
-    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  }
-
-  playTickSound() {
-    this.initAudio();
-    const osc = this.audioContext.createOscillator();
-    const gain = this.audioContext.createGain();
-    osc.connect(gain);
-    gain.connect(this.audioContext.destination);
-    osc.frequency.value = 800;
-    osc.type = 'sine';
-    gain.gain.setValueAtTime(0.1, this.audioContext.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
-    osc.start();
-    osc.stop(this.audioContext.currentTime + 0.1);
-  }
-
-  playCheckpointSound() {
-    this.initAudio();
-    const osc = this.audioContext.createOscillator();
-    const gain = this.audioContext.createGain();
-    osc.connect(gain);
-    gain.connect(this.audioContext.destination);
-    osc.frequency.value = 440;
-    osc.type = 'sine';
-    gain.gain.setValueAtTime(0.15, this.audioContext.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.3);
-    osc.start();
-    osc.stop(this.audioContext.currentTime + 0.3);
-  }
-
-  playSuccessSound() {
-    this.initAudio();
-    const notes = [523.25, 659.25, 783.99];
-    notes.forEach((freq, i) => {
-      const osc = this.audioContext.createOscillator();
-      const gain = this.audioContext.createGain();
-      osc.connect(gain);
-      gain.connect(this.audioContext.destination);
-      osc.frequency.value = freq;
-      osc.type = 'sine';
-      const startTime = this.audioContext.currentTime + i * 0.15;
-      gain.gain.setValueAtTime(0, startTime);
-      gain.gain.linearRampToValueAtTime(0.15, startTime + 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
-      osc.start(startTime);
-      osc.stop(startTime + 0.3);
-    });
-  }
-
-  debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-      const later = () => {
-        clearTimeout(timeout);
-        func(...args);
-      };
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-    };
+  clearConfetti() {
+    if (this.confettiCleanupTimeout) {
+      clearTimeout(this.confettiCleanupTimeout);
+      this.confettiCleanupTimeout = null;
+    }
+    if (this.els.confetti) {
+      this.els.confetti.innerHTML = '';
+    }
   }
 
   destroy() {
@@ -1594,9 +1487,13 @@ class PlankApp {
     }
     window.removeEventListener('online', this._onlineHandler);
     this.stopSyncRetry();
+    this.clearConfetti();
     if (this.trendChartInstance) {
       this.trendChartInstance.destroy();
       this.trendChartInstance = null;
+    }
+    if (this.audioManager) {
+      this.audioManager.destroy();
     }
   }
 }
