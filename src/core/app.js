@@ -105,8 +105,11 @@ class PlankApp {
 
   async initVoice() {
     await voiceManager.init();
+    // 语音语言跟随应用语言
+    const appLocale = i18n.getLocale();
+    voiceManager.setLanguage(appLocale);
     this.els.voiceEnabled.checked = voiceManager.enabled;
-    this.els.voiceType.value = voiceManager.language;
+    this.els.voiceType.value = appLocale;
 
     const currentLangBtn = document.querySelector(`.lang-btn[data-lang="${i18n.getLocale()}"]`);
     if (currentLangBtn) {
@@ -1233,11 +1236,14 @@ class PlankApp {
 
   async changeLanguage(lang) {
     await i18n.setLocale(lang);
-    
+    // 语音语言跟随应用语言
+    voiceManager.setLanguage(lang);
+    this.els.voiceType.value = lang;
+
     this.els.langBtns.forEach(btn => {
       btn.classList.toggle('active', btn.dataset.lang === lang);
     });
-    
+
     this.applyI18n();
   }
 
