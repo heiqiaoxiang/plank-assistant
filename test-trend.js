@@ -5,7 +5,7 @@ import { chromium } from 'playwright';
   const page = await browser.newPage();
   
   // 打开页面
-  await page.goto('http://localhost:23367/');
+  await page.goto('http://localhost:23366/');
   await page.waitForTimeout(1000);
   
   // 模拟完成几次训练
@@ -16,7 +16,7 @@ import { chromium } from 'playwright';
     await page.evaluate(() => {
       if (window.app) {
         window.app.state.duration = 1;
-        window.app.completeSession();
+        window.app.complete();
       }
     });
     await page.waitForTimeout(500);
