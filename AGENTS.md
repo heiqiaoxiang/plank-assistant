@@ -18,6 +18,18 @@ This ensures the feature list always reflects the current implementation state.
 
 ## Feature Testing (Playwright)
 
+### 测试要求（强制执行）
+
+**每次修复问题或增加新功能，必须相应添加 Playwright 测试代码。**
+
+- **新增功能** → 编写完整的 E2E 测试覆盖该功能
+- **Bug 修复** → 编写回归测试防止问题复发
+- **功能改进** → 更新/扩展相关测试用例
+
+参考详细指南: [docs/PLAYWRIGHT_GUIDE.md](./docs/PLAYWRIGHT_GUIDE.md)
+
+### 测试工作流程
+
 After completing any feature, **run Playwright tests** and save results:
 
 **Test Workflow:**
