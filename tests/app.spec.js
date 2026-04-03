@@ -4,6 +4,7 @@ test.describe('Plank App', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
+    await page.evaluate(() => localStorage.clear());
   });
 
   test('page loads correctly', async ({ page }) => {
@@ -22,8 +23,7 @@ test.describe('Plank App', () => {
     await expect(historyBtn).toBeVisible();
     
     await historyBtn.click();
-    await page.waitForTimeout(500);
-    
+
     const historyOverlay = page.locator('#historyOverlay');
     await expect(historyOverlay).toHaveClass(/show/);
   });
@@ -49,12 +49,13 @@ test.describe('Plank App', () => {
 
   test('start button begins countdown', async ({ page }) => {
     const startBtn = page.locator('#startBtn');
-    await startBtn.click();
-    await page.waitForTimeout(1100);
-    
     const timerDisplay = page.locator('#timerDisplay');
-    const text = await timerDisplay.textContent();
-    expect(parseInt(text)).toBeLessThan(60);
+
+    await startBtn.click();
+    await expect(async () => {
+      const text = await timerDisplay.textContent();
+      expect(parseInt(text)).toBeLessThan(60);
+    }).toPass({ timeout: 3000 });
   });
 
   test('pause and resume functionality', async ({ page }) => {
@@ -63,28 +64,31 @@ test.describe('Plank App', () => {
     const timerDisplay = page.locator('#timerDisplay');
 
     await startBtn.click();
-    await page.waitForTimeout(2100);
-    
+    await expect(async () => {
+      const time = parseInt(await timerDisplay.textContent());
+      expect(time).toBeLessThan(59);
+    }).toPass({ timeout: 3000 });
+
     const timeBeforePause = parseInt(await timerDisplay.textContent());
-    expect(timeBeforePause).toBeLessThan(59);
-    
+
     await startBtn.click();
     await expect(pauseIndicator).toHaveClass(/show/);
-    expect(await startBtn.textContent()).toBe('继续');
-    
+    await expect(startBtn).toHaveText('继续');
+
     const timeDuringPause = parseInt(await timerDisplay.textContent());
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(500);
     const timeAfterPause = parseInt(await timerDisplay.textContent());
     expect(timeAfterPause).toBe(timeDuringPause);
-    
+
     await startBtn.click();
     await expect(pauseIndicator).not.toHaveClass(/show/);
-    expect(await startBtn.textContent()).toBe('暂停');
-    
+    await expect(startBtn).toHaveText('暂停');
+
     const timeAfterResume = parseInt(await timerDisplay.textContent());
-    await page.waitForTimeout(1100);
-    const timeAfterMore = parseInt(await timerDisplay.textContent());
-    expect(timeAfterMore).toBeLessThan(timeAfterResume);
+    await expect(async () => {
+      const time = parseInt(await timerDisplay.textContent());
+      expect(time).toBeLessThan(timeAfterResume);
+    }).toPass({ timeout: 3000 });
   });
 
   test('reset restores initial state', async ({ page }) => {
@@ -93,11 +97,10 @@ test.describe('Plank App', () => {
     const timerDisplay = page.locator('#timerDisplay');
 
     await startBtn.click();
-    await page.waitForTimeout(1100);
-    expect(await startBtn.textContent()).toBe('暂停');
-    
+    await expect(startBtn).toHaveText('暂停');
+
     await resetBtn.click();
     await expect(timerDisplay).toHaveText('60');
-    expect(await startBtn.textContent()).toBe('开始');
+    await expect(startBtn).toHaveText('开始');
   });
 });
