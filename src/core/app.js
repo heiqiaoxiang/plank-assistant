@@ -477,8 +477,8 @@ class PlankApp {
       }
     });
 
-    this.els.profileNickname.addEventListener('change', (e) => {
-      this.saveNicknameDebounced(e.target.value);
+    this.els.profileNickname.addEventListener('blur', (e) => {
+      this.saveNickname(e.target.value);
     });
 
     this.els.langBtns.forEach(btn => {
@@ -516,11 +516,20 @@ class PlankApp {
 
       if (!stored) {
         const legacyKey = getLegacyStorageKey();
-        const legacyData = localStorage.getItem(legacyKey);
-        if (legacyData) {
-          console.log('[App] Migrating legacy data to user-specific key:', key);
-          stored = legacyData;
-          localStorage.setItem(key, legacyData);
+        const baseKey = 'plank_data';
+        
+        let sourceData = localStorage.getItem(legacyKey);
+        let sourceKey = legacyKey;
+        
+        if (!sourceData && this.userId) {
+          sourceData = localStorage.getItem(baseKey);
+          sourceKey = baseKey;
+        }
+        
+        if (sourceData) {
+          console.log('[App] Migrating data from', sourceKey, 'to', key);
+          stored = sourceData;
+          localStorage.setItem(key, sourceData);
         }
       }
 
@@ -528,6 +537,16 @@ class PlankApp {
         const data = JSON.parse(stored);
         if (!this.isToday(data.lastDate)) {
           data.todayCount = 0;
+        }
+        if (!data.nickname && this.userId) {
+          const baseKey = getStorageKey(null);
+          const baseData = localStorage.getItem(baseKey);
+          if (baseData) {
+            const parsed = JSON.parse(baseData);
+            if (parsed.nickname) {
+              data.nickname = parsed.nickname;
+            }
+          }
         }
         return data;
       }
@@ -539,7 +558,8 @@ class PlankApp {
       weekCount: 0,
       totalTime: 0,
       lastDate: null,
-      history: []
+      history: [],
+      nickname: ''
     };
   }
 
@@ -614,10 +634,14 @@ class PlankApp {
     this.state.duration = seconds;
     this.state.timeLeft = seconds;
     this.updateDisplay();
+    this.updateProgressRing();
 
-    this.els.presets.forEach(p => {
-      p.classList.toggle('active', p.dataset.time === String(seconds) ||
-        (seconds !== 30 && seconds !== 60 && seconds !== 90 && seconds !== 120 && p.dataset.time === 'custom'));
+    const presets = document.querySelectorAll('.preset');
+    presets.forEach(p => {
+      const presetTime = p.dataset.time;
+      const isMatch = presetTime === String(seconds);
+      const isCustom = presetTime === 'custom' && ![30, 60, 90, 120].includes(seconds);
+      p.classList.toggle('active', isMatch || isCustom);
     });
   }
 
@@ -1073,11 +1097,24 @@ class PlankApp {
   }
 
   async isEmailUserLoggedIn() {
-    if (!supabase) return false;
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return false;
-    const user = session.user;
-    return user && user.email && !user.is_anonymous;
+    if (!supabase) {
+      console.log('[App] Supabase not configured, user not logged in');
+      return false;
+    }
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.log('[App] No active session');
+        return false;
+      }
+      const user = session.user;
+      const isEmailUser = user && user.email && !user.is_anonymous;
+      console.log('[App] isEmailUserLoggedIn:', isEmailUser);
+      return isEmailUser;
+    } catch (err) {
+      console.warn('[App] Error checking login status:', err.message);
+      return false;
+    }
   }
 
   showLoginModal() {

@@ -3,8 +3,9 @@ import { test, expect } from '@playwright/test';
 test.describe('Login Flow', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.evaluate(() => localStorage.clear());
+    await page.waitForTimeout(500);
   });
 
   test('leaderboard shows login modal when not authenticated', async ({ page }) => {

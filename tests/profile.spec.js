@@ -3,8 +3,9 @@ import { test, expect } from '@playwright/test';
 test.describe('Profile Settings', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.evaluate(() => localStorage.clear());
+    await page.waitForTimeout(500);
     await page.locator('#settingsBtn').click();
     await expect(page.locator('#settingsOverlay')).toBeVisible();
   });
@@ -22,12 +23,12 @@ test.describe('Profile Settings', () => {
     const testNickname = 'TestUser123';
     const nicknameInput = page.locator('#profileNickname');
 
+    await page.waitForTimeout(500);
     await nicknameInput.fill(testNickname);
     await nicknameInput.blur();
-    await expect(async () => {
-      const value = await nicknameInput.inputValue();
-      expect(value).toBe(testNickname);
-    }).toPass({ timeout: 3000 });
+    await page.waitForTimeout(300);
+
+    await expect(nicknameInput).toHaveValue(testNickname);
 
     await page.locator('#settingsClose').click();
     await page.locator('#settingsBtn').click();
@@ -60,7 +61,7 @@ test.describe('Profile Settings', () => {
 test.describe('Logout Functionality', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.evaluate(() => localStorage.clear());
   });
 
