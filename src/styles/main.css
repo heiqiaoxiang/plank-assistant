@@ -106,19 +106,29 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 20px;
-  gap: 40px;
+  justify-content: flex-start;
+  padding: 12px 20px;
+  gap: 16px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .breath-container {
   position: relative;
-  width: 300px;
-  height: 300px;
+  width: 260px;
+  height: 260px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+}
+
+@media (min-height: 700px) {
+  .breath-container {
+    width: 300px;
+    height: 300px;
+  }
 }
 
 .progress-ring {
@@ -569,7 +579,13 @@ body {
   -webkit-user-select: none;
 }
 
-.mode-selector, .custom-time-modal, .completion-overlay {
+button, .action-btn, .preset, .mode-btn, .mode-option, .btn, .history-tab, .leaderboard-type-btn, .lang-btn, .settings-action-btn {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+
+.mode-selector, .custom-time-modal, .completion-overlay, .history-overlay, .leaderboard-overlay, .login-modal, .settings-overlay {
   touch-action: manipulation;
 }
 

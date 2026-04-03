@@ -283,6 +283,7 @@ npm test
 | 个人中心 | `profile.spec.js` | ✅ 已覆盖 |
 | 语音播报 | `voice.spec.js` | 📝 待添加 |
 | 多语言 | `i18n.spec.js` | 📝 待添加 |
+| 移动端响应式适配 | `mobile-responsive.spec.js` | ✅ 已覆盖 |
 
 ---
 
