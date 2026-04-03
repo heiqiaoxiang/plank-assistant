@@ -20,5 +20,16 @@ export const supabase = supabaseUrl && supabaseAnonKey
 export const isSupabaseConfigured = () => !!supabase;
 
 // Shared storage keys
-export const STORAGE_KEY = 'plank_assistant_data';
+export const STORAGE_KEY_BASE = 'plank_assistant_data';
 export const SYNC_KEY = 'plank_last_sync';
+
+export function getStorageKey(userId = null) {
+  if (userId) {
+    return `${STORAGE_KEY_BASE}_${userId}`;
+  }
+  return `${STORAGE_KEY_BASE}_anonymous`;
+}
+
+export function getLegacyStorageKey() {
+  return STORAGE_KEY_BASE;
+}

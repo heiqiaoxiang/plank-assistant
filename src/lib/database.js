@@ -1,4 +1,4 @@
-import { supabase, isSupabaseConfigured, STORAGE_KEY } from './supabase.js';
+import { supabase, isSupabaseConfigured, getStorageKey, getLegacyStorageKey } from './supabase.js';
 
 if (typeof window !== 'undefined') {
   window.getLeaderboard = getLeaderboard;
@@ -10,7 +10,7 @@ if (typeof window !== 'undefined') {
 
 export async function saveSession(sessionData) {
   if (!isSupabaseConfigured() || !supabase) {
-    return saveSessionLocal(sessionData);
+    return await saveSessionLocal(sessionData);
   }
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -35,7 +35,7 @@ export async function saveSession(sessionData) {
 
 export async function getSessions(limit = 50) {
   if (!isSupabaseConfigured()) {
-    return getSessionsLocal(limit);
+    return await getSessionsLocal(limit);
   }
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -58,7 +58,7 @@ export async function getSessions(limit = 50) {
 
 export async function getUserStats() {
   if (!isSupabaseConfigured()) {
-    return getUserStatsLocal();
+    return await getUserStatsLocal();
   }
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -194,17 +194,39 @@ export async function migrateLocalData() {
   return { migrated: sessionsToMigrate.length };
 }
 
-function loadLocalData() {
+async function getCurrentUserId() {
+  if (!supabase) return null;
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const { data: { user } } = await supabase.auth.getUser();
+    return user?.id || null;
+  } catch {
+    return null;
+  }
+}
+
+async function loadLocalData() {
+  try {
+    const userId = await getCurrentUserId();
+    const key = getStorageKey(userId);
+    let stored = localStorage.getItem(key);
+
+    if (!stored) {
+      const legacyKey = getLegacyStorageKey();
+      const legacyData = localStorage.getItem(legacyKey);
+      if (legacyData) {
+        stored = legacyData;
+        localStorage.setItem(key, legacyData);
+      }
+    }
+
     return stored ? JSON.parse(stored) : { todayCount: 0, weekCount: 0, totalTime: 0, history: [] };
   } catch {
     return { todayCount: 0, weekCount: 0, totalTime: 0, history: [] };
   }
 }
 
-function saveSessionLocal(sessionData) {
-  const data = loadLocalData();
+async function saveSessionLocal(sessionData) {
+  const data = await loadLocalData();
   data.todayCount = (data.todayCount || 0) + 1;
   data.weekCount = (data.weekCount || 0) + 1;
   data.totalTime = (data.totalTime || 0) + (sessionData.duration - (sessionData.pausedTime || 0));
@@ -220,17 +242,20 @@ function saveSessionLocal(sessionData) {
   if (data.history.length > 100) {
     data.history = data.history.slice(-100);
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+  const userId = await getCurrentUserId();
+  const key = getStorageKey(userId);
+  localStorage.setItem(key, JSON.stringify(data));
   return { success: true };
 }
 
-function getSessionsLocal(limit) {
-  const data = loadLocalData();
+async function getSessionsLocal(limit) {
+  const data = await loadLocalData();
   return { data: (data.history || []).slice(-limit).reverse() };
 }
 
-function getUserStatsLocal() {
-  const data = loadLocalData();
+async function getUserStatsLocal() {
+  const data = await loadLocalData();
   return {
     data: {
       today_count: data.todayCount || 0,

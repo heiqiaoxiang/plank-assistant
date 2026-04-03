@@ -1,4 +1,4 @@
-import { supabase, STORAGE_KEY } from '../lib/supabase.js';
+import { supabase, getStorageKey, getLegacyStorageKey } from '../lib/supabase.js';
 import { signInWithEmail, signUpWithEmail, signOut as authSignOut } from '../lib/auth.js';
 import { voiceManager } from '../lib/voice.js';
 import { i18n } from '../i18n/index.js';
@@ -150,7 +150,15 @@ class PlankApp {
 
       const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (session?.user) {
-          this.userId = session.user.id;
+          const newUserId = session.user.id;
+          const userChanged = this.userId !== newUserId;
+          this.userId = newUserId;
+
+          if (userChanged) {
+            this.data = this.loadData();
+            this.updateStats();
+          }
+
           await this.syncPendingSessions();
           await this.mergeCloudStats();
         }
@@ -497,9 +505,25 @@ class PlankApp {
     });
   }
 
+  getStorageKey() {
+    return getStorageKey(this.userId);
+  }
+
   loadData() {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const key = this.getStorageKey();
+      let stored = localStorage.getItem(key);
+
+      if (!stored) {
+        const legacyKey = getLegacyStorageKey();
+        const legacyData = localStorage.getItem(legacyKey);
+        if (legacyData) {
+          console.log('[App] Migrating legacy data to user-specific key:', key);
+          stored = legacyData;
+          localStorage.setItem(key, legacyData);
+        }
+      }
+
       if (stored) {
         const data = JSON.parse(stored);
         if (!this.isToday(data.lastDate)) {
@@ -521,7 +545,7 @@ class PlankApp {
 
   saveData() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+      localStorage.setItem(this.getStorageKey(), JSON.stringify(this.data));
     } catch (e) {
       console.warn('[App] Failed to save data:', e.message);
     }
