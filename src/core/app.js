@@ -352,10 +352,7 @@ class PlankApp {
       userBtn: document.getElementById('settingsBtn'),
       settingsOverlay: document.getElementById('settingsOverlay'),
       settingsClose: document.getElementById('settingsClose'),
-      settingsHeader: document.querySelector('.settings-header'),
-      settingsTabs: document.querySelectorAll('.settings-tab'),
-      profileSection: document.getElementById('profileSection'),
-      settingsSection: document.getElementById('settingsSection'),
+
       profileNickname: document.getElementById('profileNickname'),
       profileEmail: document.getElementById('profileEmail'),
       profileTotalSessions: document.getElementById('profileTotalSessions'),
@@ -469,13 +466,6 @@ class PlankApp {
     this.els.settingsOverlay.addEventListener('click', (e) => {
       if (e.target === this.els.settingsOverlay) {
         this.hideSettings();
-      }
-    });
-
-    this.els.settingsHeader.addEventListener('click', (e) => {
-      const tab = e.target.closest('.settings-tab');
-      if (tab) {
-        this.switchSettingsTab(tab.dataset.tab);
       }
     });
 
@@ -1169,7 +1159,6 @@ class PlankApp {
 
   async showSettings() {
     await this.updateUserBtn();
-    this.switchSettingsTab('profile');
     this.els.settingsOverlay.classList.add('show');
   }
 
@@ -1178,20 +1167,6 @@ class PlankApp {
     if (this.trendChartInstance) {
       this.trendChartInstance.destroy();
       this.trendChartInstance = null;
-    }
-  }
-
-  switchSettingsTab(tabName) {
-    this.els.settingsTabs.forEach(tab => {
-      tab.classList.toggle('active', tab.dataset.tab === tabName);
-    });
-    
-    if (tabName === 'profile') {
-      this.els.profileSection.style.display = 'block';
-      this.els.settingsSection.style.display = 'none';
-    } else {
-      this.els.profileSection.style.display = 'none';
-      this.els.settingsSection.style.display = 'block';
     }
   }
 

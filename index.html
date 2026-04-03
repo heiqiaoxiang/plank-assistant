@@ -170,21 +170,18 @@
     <div class="settings-overlay" id="settingsOverlay">
       <div class="settings-content">
         <div class="settings-header">
-          <div class="settings-tabs">
-            <button class="settings-tab active" data-tab="profile" data-i18n="settings.tabs.profile">个人</button>
-            <button class="settings-tab" data-tab="settings" data-i18n="settings.tabs.settings">设置</button>
-          </div>
+          <h3 data-i18n="settings.title">设置</h3>
           <button class="settings-close" id="settingsClose">×</button>
         </div>
-        
+
         <div class="settings-scroll">
-          <div class="settings-section" id="profileSection">
+          <div class="settings-section">
             <div class="profile-header">
               <div class="profile-avatar-wrapper">
                 <div class="profile-avatar" id="profileAvatar">👤</div>
               </div>
               <div class="profile-info">
-                <input type="text" class="profile-nickname" id="profileNickname" 
+                <input type="text" class="profile-nickname" id="profileNickname"
                        data-i18n-placeholder="settings.nickname" placeholder="设置昵称" maxlength="20">
               </div>
             </div>
@@ -200,48 +197,46 @@
             </div>
             <div class="profile-email" id="profileEmail"></div>
           </div>
-          
-          <div class="settings-section" id="settingsSection" style="display:none;">
-            <div class="settings-group">
-              <div class="settings-group-title" data-i18n="settings.language">语言</div>
-              <div class="language-selector">
-                <button class="lang-btn" data-lang="zh">
-                  <span class="lang-name">简体中文</span>
-                </button>
-                <button class="lang-btn" data-lang="en">
-                  <span class="lang-name">English</span>
-                </button>
-                <button class="lang-btn" data-lang="yue">
-                  <span class="lang-name">粤语</span>
-                </button>
-              </div>
-            </div>
-            
-            <div class="settings-group">
-              <div class="settings-group-title" data-i18n="settings.voice">语音播报</div>
-              <div class="settings-row">
-                <span data-i18n="settings.voiceEnabled">启用语音</span>
-                <label class="toggle">
-                  <input type="checkbox" id="voiceEnabled" checked>
-                  <span class="toggle-slider"></span>
-                </label>
-              </div>
-              <div class="settings-row">
-                <span data-i18n="settings.voiceType">播报语言</span>
-                <select id="voiceType" class="settings-select">
-                  <option value="zh" data-i18n="voiceTypes.zh">中文</option>
-                  <option value="en" data-i18n="voiceTypes.en">English</option>
-                  <option value="yue" data-i18n="voiceTypes.yue">粤语</option>
-                </select>
-              </div>
-            </div>
-            
-            <div class="settings-group">
-              <div class="settings-group-title" data-i18n="settings.account">账户</div>
-              <button class="settings-action-btn danger" id="logoutBtn" data-i18n="settings.logout">
-                退出登录
+
+          <div class="settings-group">
+            <div class="settings-group-title" data-i18n="settings.language">语言</div>
+            <div class="language-selector">
+              <button class="lang-btn" data-lang="zh">
+                <span class="lang-name">简体中文</span>
+              </button>
+              <button class="lang-btn" data-lang="en">
+                <span class="lang-name">English</span>
+              </button>
+              <button class="lang-btn" data-lang="yue">
+                <span class="lang-name">粤语</span>
               </button>
             </div>
+          </div>
+
+          <div class="settings-group">
+            <div class="settings-group-title" data-i18n="settings.voice">语音播报</div>
+            <div class="settings-row">
+              <span data-i18n="settings.voiceEnabled">启用语音</span>
+              <label class="toggle">
+                <input type="checkbox" id="voiceEnabled" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="settings-row">
+              <span data-i18n="settings.voiceType">播报语言</span>
+              <select id="voiceType" class="settings-select">
+                <option value="zh" data-i18n="voiceTypes.zh">中文</option>
+                <option value="en" data-i18n="voiceTypes.en">English</option>
+                <option value="yue" data-i18n="voiceTypes.yue">粤语</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <div class="settings-group-title" data-i18n="settings.account">账户</div>
+            <button class="settings-action-btn danger" id="logoutBtn" data-i18n="settings.logout">
+              退出登录
+            </button>
           </div>
         </div>
       </div>
