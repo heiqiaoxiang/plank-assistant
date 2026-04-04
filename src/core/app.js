@@ -379,29 +379,58 @@ class PlankApp {
   }
 
   bindEvents() {
-    this.els.startBtn.addEventListener('click', () => this.toggleTimer());
-    this.els.resetBtn.addEventListener('click', () => this.reset());
-    this.els.modeBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.toggleModeSelector();
-    });
+    const safeBind = (element, event, handler, options) => {
+      if (element) {
+        element.addEventListener(event, handler, options);
+      }
+    };
 
-    this.els.modeSelector.addEventListener('click', (e) => {
+    const handleStart = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.toggleTimer();
+    };
+
+    const handleReset = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.reset();
+    };
+
+    safeBind(this.els.startBtn, 'click', handleStart);
+    safeBind(this.els.startBtn, 'touchend', handleStart, { passive: false });
+    safeBind(this.els.resetBtn, 'click', handleReset);
+    safeBind(this.els.resetBtn, 'touchend', handleReset, { passive: false });
+    const handleModeBtn = (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      this.toggleModeSelector();
+    };
+    safeBind(this.els.modeBtn, 'click', handleModeBtn);
+    safeBind(this.els.modeBtn, 'touchend', handleModeBtn, { passive: false });
+
+    const handleModeSelector = (e) => {
+      e.preventDefault();
       const option = e.target.closest('.mode-option');
       if (option) {
         this.selectMode(option.dataset.mode);
       }
-    });
+    };
+    safeBind(this.els.modeSelector, 'click', handleModeSelector);
+    safeBind(this.els.modeSelector, 'touchend', handleModeSelector, { passive: false });
 
     this.els.presets.forEach(preset => {
-      preset.addEventListener('click', () => {
+      const handlePreset = (e) => {
+        e.preventDefault();
         const time = preset.dataset.time;
         if (time === 'custom') {
           this.showCustomModal();
         } else {
           this.setDuration(parseInt(time));
         }
-      });
+      };
+      preset.addEventListener('click', handlePreset);
+      preset.addEventListener('touchend', handlePreset, { passive: false });
     });
 
     document.addEventListener('click', (e) => {
@@ -410,35 +439,66 @@ class PlankApp {
       }
     });
 
-    this.els.confirmCustom.addEventListener('click', () => this.confirmCustomTime());
-    this.els.cancelCustom.addEventListener('click', () => this.hideCustomModal());
-    this.els.doneBtn.addEventListener('click', () => this.hideCompletion());
+    const handleConfirmCustom = (e) => {
+      e.preventDefault();
+      this.confirmCustomTime();
+    };
+    safeBind(this.els.confirmCustom, 'click', handleConfirmCustom);
+    safeBind(this.els.confirmCustom, 'touchend', handleConfirmCustom, { passive: false });
+
+    const handleCancelCustom = (e) => {
+      e.preventDefault();
+      this.hideCustomModal();
+    };
+    safeBind(this.els.cancelCustom, 'click', handleCancelCustom);
+    safeBind(this.els.cancelCustom, 'touchend', handleCancelCustom, { passive: false });
+
+    const handleDone = (e) => {
+      e.preventDefault();
+      this.hideCompletion();
+    };
+    safeBind(this.els.doneBtn, 'click', handleDone);
+    safeBind(this.els.doneBtn, 'touchend', handleDone, { passive: false });
+
     this.els.customTimeInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') this.confirmCustomTime();
     });
 
-    this.els.historyClose.addEventListener('click', () => this.hideHistory());
+    const handleHistoryClose = (e) => {
+      e.preventDefault();
+      this.hideHistory();
+    };
+    safeBind(this.els.historyClose, 'click', handleHistoryClose);
+    safeBind(this.els.historyClose, 'touchend', handleHistoryClose, { passive: false });
+
     this.els.historyOverlay.addEventListener('click', (e) => {
       if (e.target === this.els.historyOverlay) {
         this.hideHistory();
       }
     });
 
-    this.els.historyBtn.addEventListener('click', () => {
+    const handleHistoryBtn = (e) => {
+      e.preventDefault();
       this.showHistoryTab('history');
-    });
+    };
+    safeBind(this.els.historyBtn, 'click', handleHistoryBtn);
+    safeBind(this.els.historyBtn, 'touchend', handleHistoryBtn, { passive: false });
 
-    this.els.leaderboardBtn.addEventListener('click', async () => {
+    const handleLeaderboardBtn = async (e) => {
+      e.preventDefault();
       const isLoggedIn = await this.isEmailUserLoggedIn();
       if (isLoggedIn) {
         this.showLeaderboard();
       } else {
         this.showLoginModal();
       }
-    });
+    };
+    safeBind(this.els.leaderboardBtn, 'click', handleLeaderboardBtn);
+    safeBind(this.els.leaderboardBtn, 'touchend', handleLeaderboardBtn, { passive: false });
 
     document.querySelectorAll('.history-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
+      const handleTab = (e) => {
+        e.preventDefault();
         document.querySelectorAll('.history-tab').forEach(t => { t.classList.remove('active'); });
         tab.classList.add('active');
         const tabName = tab.dataset.tab;
@@ -457,23 +517,56 @@ class PlankApp {
           this.els.leaderboardList.style.display = 'block';
           this.loadLeaderboard();
         }
-      });
+      };
+      tab.addEventListener('click', handleTab);
+      tab.addEventListener('touchend', handleTab, { passive: false });
     });
 
-    this.els.loginClose.addEventListener('click', () => this.hideLoginModal());
+    const handleLoginClose = (e) => {
+      e.preventDefault();
+      this.hideLoginModal();
+    };
+    safeBind(this.els.loginClose, 'click', handleLoginClose);
+    safeBind(this.els.loginClose, 'touchend', handleLoginClose, { passive: false });
+
     this.els.loginModal.addEventListener('click', (e) => {
       if (e.target === this.els.loginModal) {
         this.hideLoginModal();
       }
     });
-    this.els.loginSubmitBtn.addEventListener('click', () => this.handleLoginSubmit());
-    this.els.loginSwitchBtn.addEventListener('click', () => this.handleLoginSwitch());
+
+    const handleLoginSubmit = (e) => {
+      e.preventDefault();
+      this.handleLoginSubmit();
+    };
+    safeBind(this.els.loginSubmitBtn, 'click', handleLoginSubmit);
+    safeBind(this.els.loginSubmitBtn, 'touchend', handleLoginSubmit, { passive: false });
+
+    const handleLoginSwitch = (e) => {
+      e.preventDefault();
+      this.handleLoginSwitch();
+    };
+    safeBind(this.els.loginSwitchBtn, 'click', handleLoginSwitch);
+    safeBind(this.els.loginSwitchBtn, 'touchend', handleLoginSwitch, { passive: false });
+
     this.els.loginPassword.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') this.handleLoginSubmit();
     });
 
-    this.els.userBtn.addEventListener('click', () => this.showSettings());
-    this.els.settingsClose.addEventListener('click', () => this.hideSettings());
+    const handleUserBtn = (e) => {
+      e.preventDefault();
+      this.showSettings();
+    };
+    safeBind(this.els.userBtn, 'click', handleUserBtn);
+    safeBind(this.els.userBtn, 'touchend', handleUserBtn, { passive: false });
+
+    const handleSettingsClose = (e) => {
+      e.preventDefault();
+      this.hideSettings();
+    };
+    safeBind(this.els.settingsClose, 'click', handleSettingsClose);
+    safeBind(this.els.settingsClose, 'touchend', handleSettingsClose, { passive: false });
+
     this.els.settingsOverlay.addEventListener('click', (e) => {
       if (e.target === this.els.settingsOverlay) {
         this.hideSettings();
@@ -485,9 +578,12 @@ class PlankApp {
     });
 
     this.els.langBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
+      const handleLang = (e) => {
+        e.preventDefault();
         this.changeLanguage(btn.dataset.lang);
-      });
+      };
+      btn.addEventListener('click', handleLang);
+      btn.addEventListener('touchend', handleLang, { passive: false });
     });
 
     this.els.voiceEnabled.addEventListener('change', (e) => {
@@ -498,9 +594,19 @@ class PlankApp {
       voiceManager.setLanguage(e.target.value);
     });
 
-    this.els.logoutBtn.addEventListener('click', () => this.handleLogout());
+    const handleLogout = (e) => {
+      e.preventDefault();
+      this.handleLogout();
+    };
+    safeBind(this.els.logoutBtn, 'click', handleLogout);
+    safeBind(this.els.logoutBtn, 'touchend', handleLogout, { passive: false });
 
-    this.els.leaderboardClose.addEventListener('click', () => this.hideLeaderboard());
+    const handleLeaderboardClose = (e) => {
+      e.preventDefault();
+      this.hideLeaderboard();
+    };
+    safeBind(this.els.leaderboardClose, 'click', handleLeaderboardClose);
+    safeBind(this.els.leaderboardClose, 'touchend', handleLeaderboardClose, { passive: false });
     this.els.leaderboardOverlay.addEventListener('click', (e) => {
       if (e.target === this.els.leaderboardOverlay) {
         this.hideLeaderboard();
@@ -1540,29 +1646,31 @@ class PlankApp {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  window.app = new PlankApp();
-});
+function initApp() {
+  try {
+    window.app = new PlankApp();
+  } catch (err) {
+    console.error('[App] Failed to initialize:', err);
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
+    const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+
+    if (!isLocalhost) {
+      console.log('[App] Non-localhost environment, skipping service worker registration');
+      return;
+    }
+
     navigator.serviceWorker.register('sw.js').catch(err => {
       console.warn('[App] Service worker registration failed:', err.message);
     });
   });
-
-  let refreshing = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (refreshing) return;
-    refreshing = true;
-    window.location.reload();
-  });
-
-  setInterval(() => {
-    navigator.serviceWorker.register('sw.js').then((reg) => {
-      reg.update();
-    }).catch(err => {
-      console.warn('[App] Service worker update failed:', err.message);
-    });
-  }, SW_UPDATE_INTERVAL);
 }

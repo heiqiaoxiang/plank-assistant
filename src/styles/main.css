@@ -33,7 +33,7 @@ body {
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
-#app {
+#app-container {
   width: 100%;
   max-width: 480px;
   height: 100%;
