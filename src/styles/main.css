@@ -51,6 +51,15 @@ body {
   position: relative;
 }
 
+.version-badge {
+  position: absolute;
+  left: 16px;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
 .sync-indicator {
   position: absolute;
   right: 16px;
