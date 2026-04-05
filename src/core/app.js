@@ -796,7 +796,10 @@ class PlankApp {
     }
   }
 
-  start() {
+  async start() {
+    // 移动浏览器需要在用户交互后才能初始化语音
+    await voiceManager.initAfterUserInteraction();
+
     if (this.state.isPaused) {
       this.state.isPaused = false;
       if (this.state.pauseStartTime) {

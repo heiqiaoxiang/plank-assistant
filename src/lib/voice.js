@@ -20,25 +20,48 @@ class VoiceManager {
     this.volume = DEFAULT_SETTINGS.volume;
     this.voices = [];
     this.initialized = false;
+    this.userInteracted = false;
   }
 
   async init() {
     if (!this.synth) return;
-    
+
     this.loadSettings();
-    
+
+    // 移动浏览器需要在用户交互后才能初始化语音
+    // 所以这里只加载设置，实际语音列表在第一次用户交互后获取
+    this.initialized = true;
+  }
+
+  // 在用户交互后调用（如点击开始按钮）
+  async initAfterUserInteraction() {
+    if (!this.synth || this.userInteracted) return;
+
+    this.userInteracted = true;
+
     if ('speechSynthesis' in window) {
+      // 尝试获取语音列表
       this.voices = this.synth.getVoices();
+
+      // 如果为空，等待 voiceschanged 事件
       if (this.voices.length === 0) {
         return new Promise(resolve => {
-          this.synth.onvoiceschanged = () => {
+          const handleVoicesChanged = () => {
             this.voices = this.synth.getVoices();
-            this.initialized = true;
+            this.synth.onvoiceschanged = null;
             resolve();
           };
+
+          this.synth.onvoiceschanged = handleVoicesChanged;
+
+          // 超时处理：某些浏览器可能不触发 onvoiceschanged
+          setTimeout(() => {
+            this.voices = this.synth.getVoices();
+            this.synth.onvoiceschanged = null;
+            resolve();
+          }, 1000);
         });
       }
-      this.initialized = true;
     }
   }
 
