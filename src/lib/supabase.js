@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
@@ -18,3 +18,18 @@ export const supabase = supabaseUrl && supabaseAnonKey
   : null;
 
 export const isSupabaseConfigured = () => !!supabase;
+
+// Shared storage keys
+export const STORAGE_KEY_BASE = 'plank_assistant_data';
+export const SYNC_KEY = 'plank_last_sync';
+
+export function getStorageKey(userId = null) {
+  if (userId) {
+    return `${STORAGE_KEY_BASE}_${userId}`;
+  }
+  return `${STORAGE_KEY_BASE}_anonymous`;
+}
+
+export function getLegacyStorageKey() {
+  return STORAGE_KEY_BASE;
+}
