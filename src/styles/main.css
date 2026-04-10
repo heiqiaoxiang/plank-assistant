@@ -43,18 +43,19 @@ body {
 }
 
 .header {
-  padding: 16px 20px;
+  padding: var(--header-padding-y) var(--header-padding-x);
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 12px;
+  gap: var(--header-gap);
   position: relative;
+  flex-shrink: 0;
 }
 
 .version-badge {
   position: absolute;
-  left: 16px;
-  font-size: 11px;
+  left: var(--header-padding-x);
+  font-size: var(--badge-font-size);
   color: var(--text-dim);
   font-weight: 500;
   letter-spacing: 0.5px;
@@ -62,11 +63,11 @@ body {
 
 .sync-indicator {
   position: absolute;
-  right: 16px;
+  right: var(--header-padding-x);
   background: var(--surface);
-  padding: 4px 8px;
-  border-radius: 10px;
-  font-size: 11px;
+  padding: var(--badge-padding);
+  border-radius: 8px;
+  font-size: var(--badge-font-size);
   color: var(--text-dim);
 }
 
@@ -82,14 +83,14 @@ body {
 .mode-btn {
   background: var(--surface);
   border: none;
-  border-radius: 20px;
-  padding: 8px 16px;
+  border-radius: var(--mode-btn-border-radius);
+  padding: var(--mode-btn-padding-y) var(--mode-btn-padding-x);
   color: var(--text-dim);
-  font-size: 14px;
+  font-size: var(--mode-btn-font-size);
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   transition: all 0.15s;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
@@ -104,7 +105,7 @@ body {
 }
 
 .mode-text {
-  max-width: 140px;
+  max-width: var(--mode-text-max-width);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -116,28 +117,21 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 12px 20px;
-  gap: 16px;
+  padding: var(--main-padding-y) var(--main-padding-x);
+  gap: var(--main-gap);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 
 .breath-container {
   position: relative;
-  width: 260px;
-  height: 260px;
+  width: var(--breath-ring-size);
+  height: var(--breath-ring-size);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-}
-
-@media (min-height: 700px) {
-  .breath-container {
-    width: 300px;
-    height: 300px;
-  }
 }
 
 .progress-ring {
@@ -217,10 +211,10 @@ body {
 }
 
 .timer-display {
-  font-size: 72px;
+  font-size: var(--timer-font-size);
   font-weight: 200;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -2px;
+  letter-spacing: var(--timer-letter-spacing);
   transition: color 0.3s;
 }
 
@@ -233,9 +227,9 @@ body {
 }
 
 .breath-text {
-  font-size: 14px;
+  font-size: var(--breath-text-font-size);
   color: var(--text-dim);
-  margin-top: 8px;
+  margin-top: var(--breath-text-margin-top);
   height: 20px;
 }
 
@@ -245,11 +239,11 @@ body {
 }
 
 .btn {
-  min-width: 120px;
-  min-height: 56px;
+  min-width: var(--btn-min-width);
+  min-height: var(--btn-min-height);
   border: none;
-  border-radius: 28px;
-  font-size: 18px;
+  border-radius: var(--btn-border-radius);
+  font-size: var(--btn-font-size);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
@@ -267,14 +261,14 @@ body {
 .btn-primary {
   background: var(--primary);
   color: var(--bg);
-  min-width: 160px;
+  min-width: var(--btn-primary-min-width);
 }
 
 .btn-secondary {
   background: var(--surface);
   color: var(--text);
-  min-width: 56px;
-  font-size: 24px;
+  min-width: var(--btn-secondary-min-width);
+  font-size: var(--btn-secondary-font-size);
 }
 
 .presets {
@@ -287,10 +281,10 @@ body {
 .preset {
   background: var(--surface);
   border: 2px solid transparent;
-  border-radius: 20px;
-  padding: 10px 16px;
+  border-radius: var(--preset-border-radius);
+  padding: var(--preset-padding-y) var(--preset-padding-x);
   color: var(--text-dim);
-  font-size: 14px;
+  font-size: var(--preset-font-size);
   cursor: pointer;
   transition: all 0.15s;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
@@ -309,10 +303,10 @@ body {
 
 .stats {
   display: flex;
-  gap: 32px;
-  padding: 16px 24px;
+  gap: var(--stats-gap);
+  padding: var(--stats-padding-y) var(--stats-padding-x);
   background: var(--surface);
-  border-radius: 16px;
+  border-radius: var(--stats-border-radius);
 }
 
 .stat-item {
@@ -323,13 +317,13 @@ body {
 }
 
 .stat-value {
-  font-size: 24px;
+  font-size: var(--stat-value-font-size);
   font-weight: 600;
   color: var(--primary);
 }
 
 .stat-label {
-  font-size: 12px;
+  font-size: var(--stat-label-font-size);
   color: var(--text-dim);
 }
 
@@ -556,23 +550,22 @@ body {
   75% { transform: translateX(-50%) translateX(5px); }
 }
 
-/* Guide Card */
 .guide-card {
   position: absolute;
-  bottom: -60px;
+  bottom: var(--guide-card-bottom);
   left: 50%;
   transform: translateX(-50%) translateY(10px);
   background: linear-gradient(135deg, var(--primary-dim), var(--surface));
   border: 1px solid var(--primary);
-  border-radius: 20px;
-  padding: 12px 20px;
+  border-radius: var(--guide-card-border-radius);
+  padding: var(--guide-card-padding);
   max-width: 300px;
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.4s ease-out, transform 0.4s ease-out, visibility 0.4s;
   box-shadow: 0 4px 20px rgba(0, 212, 170, 0.2);
   text-align: center;
-  font-size: 14px;
+  font-size: var(--guide-card-font-size);
   color: var(--text);
   line-height: 1.5;
 }
@@ -882,9 +875,9 @@ button, .action-btn, .preset, .mode-btn, .mode-option, .btn, .history-tab, .lead
 /* Action Buttons */
 .action-buttons {
   display: flex;
-  gap: 12px;
+  gap: var(--action-btn-gap);
   width: 100%;
-  margin-top: 16px;
+  margin-top: var(--action-btn-margin-top);
 }
 
 .action-btn {
@@ -892,13 +885,13 @@ button, .action-btn, .preset, .mode-btn, .mode-option, .btn, .history-tab, .lead
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 14px 20px;
+  gap: 6px;
+  padding: var(--action-btn-padding-y) var(--action-btn-padding-x);
   background: var(--surface);
   border: none;
-  border-radius: 16px;
+  border-radius: var(--action-btn-border-radius);
   color: var(--text);
-  font-size: 15px;
+  font-size: var(--action-btn-font-size);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s;
@@ -1016,13 +1009,13 @@ button, .action-btn, .preset, .mode-btn, .mode-option, .btn, .history-tab, .lead
   background: var(--surface);
   border: none;
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
+  width: var(--settings-btn-size);
+  height: var(--settings-btn-size);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 18px;
+  font-size: var(--settings-btn-font-size);
   transition: all 0.15s;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }

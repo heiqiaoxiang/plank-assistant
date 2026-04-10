@@ -1,0 +1,351 @@
+/* iPhone Device Variables System */
+/* 精确适配各型号iPhone，不考虑横屏 */
+
+:root {
+  /* 基础变量 - 默认值（iPhone SE作为基准） */
+  --device-type: 'default';
+  
+  /* 呼吸环尺寸 */
+  --breath-ring-size: 200px;
+  
+  /* 计时器 */
+  --timer-font-size: 48px;
+  --timer-letter-spacing: -2px;
+  
+  /* Header */
+  --header-padding-y: 8px;
+  --header-padding-x: 12px;
+  --header-gap: 4px;
+  
+  /* 按钮 */
+  --btn-min-width: 90px;
+  --btn-min-height: 44px;
+  --btn-primary-min-width: 110px;
+  --btn-secondary-min-width: 44px;
+  --btn-border-radius: 22px;
+  --btn-font-size: 15px;
+  --btn-secondary-font-size: 18px;
+  
+  /* Mode按钮 */
+  --mode-btn-padding-y: 6px;
+  --mode-btn-padding-x: 10px;
+  --mode-btn-font-size: 12px;
+  --mode-btn-border-radius: 16px;
+  --mode-text-max-width: 100px;
+  
+  /* Settings按钮 */
+  --settings-btn-size: 32px;
+  --settings-btn-font-size: 14px;
+  
+  /* Version和Sync指示器 */
+  --badge-font-size: 9px;
+  --badge-padding: 2px 4px;
+  
+  /* 主内容区 */
+  --main-padding-y: 6px;
+  --main-padding-x: 12px;
+  --main-gap: 8px;
+  
+  /* Presets */
+  --preset-padding-y: 6px;
+  --preset-padding-x: 10px;
+  --preset-font-size: 12px;
+  --preset-border-radius: 14px;
+  
+  /* Stats统计区 */
+  --stats-gap: 16px;
+  --stats-padding-y: 10px;
+  --stats-padding-x: 16px;
+  --stats-border-radius: 12px;
+  --stat-value-font-size: 18px;
+  --stat-label-font-size: 11px;
+  
+  /* Action按钮 */
+  --action-btn-gap: 6px;
+  --action-btn-padding-y: 8px;
+  --action-btn-padding-x: 12px;
+  --action-btn-font-size: 13px;
+  --action-btn-border-radius: 12px;
+  --action-btn-margin-top: 4px;
+  
+  /* Breath文字 */
+  --breath-text-font-size: 13px;
+  --breath-text-margin-top: 6px;
+  
+  /* Guide卡片 */
+  --guide-card-padding: 10px 16px;
+  --guide-card-font-size: 13px;
+  --guide-card-border-radius: 16px;
+  --guide-card-bottom: -50px;
+}
+
+/* iPhone SE (3rd gen) - 375×667 - 小屏幕基准 */
+/* 使用:root默认值即可 */
+
+/* iPhone 12/13/14/15/16 mini - 375×812 */
+@media (width: 375px) and (min-height: 800px) and (max-height: 820px) {
+  :root {
+    --device-type: 'iphone-mini';
+    --breath-ring-size: 240px;
+    --timer-font-size: 56px;
+    --header-padding-y: 10px;
+    --main-padding-y: 10px;
+    --main-gap: 12px;
+    --btn-min-height: 48px;
+    --btn-min-width: 100px;
+    --btn-primary-min-width: 130px;
+    --mode-btn-padding-x: 12px;
+    --mode-btn-font-size: 13px;
+    --mode-text-max-width: 110px;
+    --stats-gap: 20px;
+    --stats-padding-y: 12px;
+    --stats-padding-x: 20px;
+    --stat-value-font-size: 20px;
+    --preset-padding-x: 12px;
+    --preset-font-size: 13px;
+    --action-btn-padding-y: 10px;
+    --action-btn-padding-x: 14px;
+    --action-btn-font-size: 14px;
+    --action-btn-margin-top: 8px;
+  }
+}
+
+/* iPhone 12/13/14/15/16 - 390×844 */
+@media (width: 390px) and (min-height: 830px) and (max-height: 850px) {
+  :root {
+    --device-type: 'iphone-standard';
+    --breath-ring-size: 260px;
+    --timer-font-size: 64px;
+    --header-padding-y: 12px;
+    --header-padding-x: 16px;
+    --main-padding-y: 12px;
+    --main-padding-x: 16px;
+    --main-gap: 14px;
+    --btn-min-height: 52px;
+    --btn-min-width: 110px;
+    --btn-primary-min-width: 140px;
+    --btn-font-size: 16px;
+    --mode-btn-padding-y: 8px;
+    --mode-btn-padding-x: 14px;
+    --mode-btn-font-size: 14px;
+    --mode-btn-border-radius: 18px;
+    --mode-text-max-width: 120px;
+    --settings-btn-size: 36px;
+    --settings-btn-font-size: 16px;
+    --badge-font-size: 10px;
+    --stats-gap: 24px;
+    --stats-padding-y: 14px;
+    --stats-padding-x: 22px;
+    --stats-border-radius: 14px;
+    --stat-value-font-size: 22px;
+    --preset-padding-y: 8px;
+    --preset-padding-x: 14px;
+    --preset-font-size: 14px;
+    --preset-border-radius: 16px;
+    --action-btn-gap: 8px;
+    --action-btn-padding-y: 12px;
+    --action-btn-padding-x: 18px;
+    --action-btn-font-size: 15px;
+    --action-btn-border-radius: 14px;
+    --action-btn-margin-top: 12px;
+    --breath-text-font-size: 14px;
+    --breath-text-margin-top: 8px;
+    --guide-card-padding: 12px 18px;
+    --guide-card-font-size: 14px;
+    --guide-card-bottom: -55px;
+  }
+}
+
+/* iPhone 14/15/16 Pro - 393×852 */
+/* iPhone 12/13/14/15/16 Plus - 393×852 (同Pro高度，略宽) */
+@media (min-width: 392px) and (max-width: 394px) and (min-height: 840px) and (max-height: 860px) {
+  :root {
+    --device-type: 'iphone-pro';
+    --breath-ring-size: 270px;
+    --timer-font-size: 68px;
+    --header-padding-y: 14px;
+    --header-padding-x: 18px;
+    --header-gap: 10px;
+    --main-padding-y: 14px;
+    --main-padding-x: 18px;
+    --main-gap: 16px;
+    --btn-min-height: 54px;
+    --btn-min-width: 115px;
+    --btn-primary-min-width: 150px;
+    --btn-border-radius: 26px;
+    --btn-font-size: 17px;
+    --mode-btn-padding-y: 8px;
+    --mode-btn-padding-x: 16px;
+    --mode-btn-font-size: 14px;
+    --mode-btn-border-radius: 20px;
+    --mode-text-max-width: 130px;
+    --settings-btn-size: 38px;
+    --settings-btn-font-size: 17px;
+    --badge-font-size: 10px;
+    --badge-padding: 3px 6px;
+    --stats-gap: 28px;
+    --stats-padding-y: 16px;
+    --stats-padding-x: 26px;
+    --stats-border-radius: 16px;
+    --stat-value-font-size: 24px;
+    --preset-padding-y: 10px;
+    --preset-padding-x: 16px;
+    --preset-font-size: 14px;
+    --preset-border-radius: 18px;
+    --action-btn-gap: 10px;
+    --action-btn-padding-y: 14px;
+    --action-btn-padding-x: 20px;
+    --action-btn-font-size: 15px;
+    --action-btn-border-radius: 16px;
+    --action-btn-margin-top: 14px;
+    --breath-text-font-size: 14px;
+    --breath-text-margin-top: 8px;
+    --guide-card-padding: 12px 20px;
+    --guide-card-font-size: 14px;
+    --guide-card-bottom: -60px;
+  }
+}
+
+/* iPhone 14/15/16 Pro Max - 430×932 */
+@media (min-width: 428px) and (max-width: 432px) and (min-height: 920px) and (max-height: 940px) {
+  :root {
+    --device-type: 'iphone-pro-max';
+    --breath-ring-size: 300px;
+    --timer-font-size: 72px;
+    --header-padding-y: 16px;
+    --header-padding-x: 20px;
+    --header-gap: 12px;
+    --main-padding-y: 16px;
+    --main-padding-x: 20px;
+    --main-gap: 18px;
+    --btn-min-height: 56px;
+    --btn-min-width: 120px;
+    --btn-primary-min-width: 160px;
+    --btn-border-radius: 28px;
+    --btn-font-size: 18px;
+    --btn-secondary-font-size: 24px;
+    --mode-btn-padding-y: 8px;
+    --mode-btn-padding-x: 16px;
+    --mode-btn-font-size: 14px;
+    --mode-btn-border-radius: 20px;
+    --mode-text-max-width: 140px;
+    --settings-btn-size: 40px;
+    --settings-btn-font-size: 18px;
+    --badge-font-size: 11px;
+    --badge-padding: 4px 8px;
+    --stats-gap: 32px;
+    --stats-padding-y: 16px;
+    --stats-padding-x: 24px;
+    --stats-border-radius: 16px;
+    --stat-value-font-size: 24px;
+    --stat-label-font-size: 12px;
+    --preset-padding-y: 10px;
+    --preset-padding-x: 16px;
+    --preset-font-size: 14px;
+    --preset-border-radius: 20px;
+    --action-btn-gap: 12px;
+    --action-btn-padding-y: 14px;
+    --action-btn-padding-x: 20px;
+    --action-btn-font-size: 15px;
+    --action-btn-border-radius: 16px;
+    --action-btn-margin-top: 16px;
+    --breath-text-font-size: 14px;
+    --breath-text-margin-top: 8px;
+    --guide-card-padding: 12px 20px;
+    --guide-card-font-size: 14px;
+    --guide-card-bottom: -60px;
+  }
+}
+
+/* iPhone 16 Pro Max (可能的新分辨率) - 440×956 */
+@media (min-width: 438px) and (max-width: 442px) and (min-height: 950px) and (max-height: 960px) {
+  :root {
+    --device-type: 'iphone-16-pro-max-new';
+    --breath-ring-size: 310px;
+    --timer-font-size: 76px;
+    --header-padding-y: 18px;
+    --header-padding-x: 22px;
+    --header-gap: 12px;
+    --main-padding-y: 18px;
+    --main-padding-x: 22px;
+    --main-gap: 20px;
+    --btn-min-height: 58px;
+    --btn-min-width: 125px;
+    --btn-primary-min-width: 170px;
+    --btn-border-radius: 29px;
+    --btn-font-size: 18px;
+    --mode-btn-padding-y: 10px;
+    --mode-btn-padding-x: 18px;
+    --mode-btn-font-size: 15px;
+    --mode-btn-border-radius: 20px;
+    --mode-text-max-width: 150px;
+    --settings-btn-size: 42px;
+    --settings-btn-font-size: 19px;
+    --stats-gap: 36px;
+    --stats-padding-y: 18px;
+    --stats-padding-x: 28px;
+    --stats-border-radius: 18px;
+    --stat-value-font-size: 26px;
+    --action-btn-padding-y: 16px;
+    --action-btn-padding-x: 22px;
+    --action-btn-font-size: 16px;
+    --action-btn-border-radius: 18px;
+    --action-btn-margin-top: 18px;
+  }
+}
+
+/* 通用大屏幕回退 (高度 > 900px的其他设备) */
+@media (min-height: 900px) {
+  :root {
+    --breath-ring-size: 280px;
+    --timer-font-size: 68px;
+    --header-padding-y: 16px;
+    --main-padding-y: 16px;
+    --main-gap: 16px;
+    --btn-min-height: 56px;
+    --btn-min-width: 120px;
+    --btn-primary-min-width: 160px;
+    --mode-btn-padding-y: 8px;
+    --mode-btn-padding-x: 16px;
+    --settings-btn-size: 40px;
+    --stats-gap: 32px;
+    --stats-padding-y: 16px;
+    --stats-padding-x: 24px;
+    --stat-value-font-size: 24px;
+    --preset-padding-y: 10px;
+    --preset-padding-x: 16px;
+    --action-btn-padding-y: 14px;
+    --action-btn-padding-x: 20px;
+    --action-btn-margin-top: 16px;
+  }
+}
+
+/* 通用小屏幕回退 (高度 < 700px的其他设备) */
+@media (max-height: 700px) {
+  :root {
+    --breath-ring-size: 190px;
+    --timer-font-size: 44px;
+    --header-padding-y: 6px;
+    --main-padding-y: 4px;
+    --main-gap: 6px;
+    --btn-min-height: 40px;
+    --btn-min-width: 85px;
+    --btn-primary-min-width: 100px;
+    --btn-font-size: 14px;
+    --mode-btn-padding-y: 5px;
+    --mode-btn-padding-x: 8px;
+    --mode-btn-font-size: 11px;
+    --settings-btn-size: 30px;
+    --stats-gap: 12px;
+    --stats-padding-y: 8px;
+    --stats-padding-x: 12px;
+    --stat-value-font-size: 16px;
+    --preset-padding-y: 5px;
+    --preset-padding-x: 8px;
+    --preset-font-size: 11px;
+    --action-btn-padding-y: 6px;
+    --action-btn-padding-x: 10px;
+    --action-btn-font-size: 12px;
+    --action-btn-margin-top: 2px;
+  }
+}
