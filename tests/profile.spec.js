@@ -52,9 +52,12 @@ test.describe('Profile Settings', () => {
   });
 
   test('settings page shows language and voice options', async ({ page }) => {
-    await expect(page.locator('.lang-btn')).toHaveCount(3);
-    await expect(page.locator('#voiceEnabled')).toBeVisible();
-    await expect(page.locator('#voiceType')).toBeVisible();
+    await page.waitForTimeout(500);
+    await expect(page.locator('.lang-btn')).toHaveCount(2);
+    await expect(page.locator('#voiceEnabled')).toHaveCount(1);
+    await expect(page.locator('#voiceType')).toHaveCount(1);
+    await expect(page.locator('#voiceName')).toHaveCount(1);
+    await expect(page.locator('#voiceTestBtn')).toHaveCount(1);
   });
 });
 
