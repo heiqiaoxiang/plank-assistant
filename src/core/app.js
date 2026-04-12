@@ -105,16 +105,60 @@ class PlankApp {
 
   async initVoice() {
     await voiceManager.init();
-    // 语音语言跟随应用语言
     const appLocale = i18n.getLocale();
     voiceManager.setLanguage(appLocale);
     this.els.voiceEnabled.checked = voiceManager.enabled;
     this.els.voiceType.value = appLocale;
-
+    if (voiceManager.voiceId && this.els.voiceName) {
+      this.updateVoiceNameOptions();
+    }
     const currentLangBtn = document.querySelector(`.lang-btn[data-lang="${i18n.getLocale()}"]`);
     if (currentLangBtn) {
       currentLangBtn.classList.add('active');
     }
+  }
+
+  updateVoiceNameOptions() {
+    if (!this.els.voiceName) return;
+    const currentLang = this.els.voiceType.value;
+    let voices = voiceManager.getVoicesByLanguage(currentLang);
+
+    if (voices.length === 0 && voiceManager.voices.length > 0) {
+      console.log('[App] Voice list empty for lang', currentLang, ', retrying with raw voices');
+      voices = voiceManager.voices.filter(v => {
+        if (currentLang === 'zh') {
+          return v.lang && (v.lang.startsWith('zh') || v.lang.startsWith('cmn'));
+        } else if (currentLang === 'en') {
+          return v.lang && v.lang.startsWith('en');
+        }
+        return false;
+      });
+    }
+
+    console.log('[App] Available voices for', currentLang, ':', voices.length);
+
+    const currentVoiceId = voiceManager.voiceId;
+    this.els.voiceName.innerHTML = '<option value="" data-i18n="settings.defaultVoice">默认</option>';
+
+    if (voices.length === 0) {
+      const option = document.createElement('option');
+      option.value = "";
+      option.textContent = "-- 暂无可用语音 --";
+      option.disabled = true;
+      this.els.voiceName.appendChild(option);
+      console.warn('[App] No voices available for language:', currentLang);
+      return;
+    }
+
+    voices.forEach(voice => {
+      const option = document.createElement('option');
+      option.value = voice.name;
+      option.textContent = `${voice.name} (${voice.lang})`;
+      if (voice.name === currentVoiceId) {
+        option.selected = true;
+      }
+      this.els.voiceName.appendChild(option);
+    });
   }
 
   loadPendingSync() {
@@ -371,6 +415,8 @@ class PlankApp {
       profileAvatar: document.getElementById('profileAvatar'),
       voiceEnabled: document.getElementById('voiceEnabled'),
       voiceType: document.getElementById('voiceType'),
+      voiceName: document.getElementById('voiceName'),
+      voiceTestBtn: document.getElementById('voiceTestBtn'),
       langBtns: document.querySelectorAll('.lang-btn'),
       logoutBtn: document.getElementById('logoutBtn'),
       leaderboardOverlay: document.getElementById('leaderboardOverlay'),
@@ -592,6 +638,15 @@ class PlankApp {
 
     this.els.voiceType.addEventListener('change', (e) => {
       voiceManager.setLanguage(e.target.value);
+      this.updateVoiceNameOptions();
+    });
+
+    this.els.voiceName?.addEventListener('change', (e) => {
+      voiceManager.setVoice(e.target.value || null);
+    });
+
+    this.els.voiceTestBtn?.addEventListener('click', () => {
+      voiceManager.testVoice();
     });
 
     const handleLogout = (e) => {
@@ -797,8 +852,8 @@ class PlankApp {
   }
 
   async start() {
-    // 移动浏览器需要在用户交互后才能初始化语音
     await voiceManager.initAfterUserInteraction();
+    this.updateVoiceNameOptions();
 
     if (this.state.isPaused) {
       this.state.isPaused = false;
@@ -1332,6 +1387,8 @@ class PlankApp {
 
   async showSettings() {
     await this.updateUserBtn();
+    await voiceManager.initAfterUserInteraction();
+    this.updateVoiceNameOptions();
     this.els.settingsOverlay.classList.add('show');
   }
 
