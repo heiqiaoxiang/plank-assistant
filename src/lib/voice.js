@@ -1,16 +1,11 @@
 const SETTINGS_KEY = 'plank_voice_settings';
 
-// 粤语关键词（需要排除的语音）
-const CANTONESE_KEYWORDS = [
-  'sin-ji', 'Siu-Chun', 'Ka Ling', 'Jia-Ling',
-  '婷婷', 'Ting-Ting', 'Yan-Yan', 'Man-Man',
-  'hong', 'aiting'
-];
-
-// 普通话关键词（优先选择的语音）
-const MANDARIN_KEYWORDS = [
-  'Tian-Tian', 'Mei-Jia', 'Huihui', 'Yaoyao',
-  'Kangkang', 'mingming', 'zhenzhu', 'xiaoyan'
+// 只保留 Google 官方语音
+const GOOGLE_VOICES = [
+  { name: 'Google 普通话（中国大陆）', lang: 'zh-CN', category: 'zh' },
+  { name: 'Google 國語（臺灣）', lang: 'zh-TW', category: 'zh' },
+  { name: 'Google 粤語（香港）', lang: 'zh-HK', category: 'yue' },
+  { name: 'Google US English', lang: 'en-US', category: 'en' }
 ];
 
 const DEFAULT_SETTINGS = {
@@ -22,7 +17,8 @@ const DEFAULT_SETTINGS = {
 
 const SPEECH_LANG_MAP = {
   zh: 'zh-CN',
-  en: 'en-US'
+  en: 'en-US',
+  yue: 'zh-HK'
 };
 
 class VoiceManager {
@@ -86,16 +82,17 @@ class VoiceManager {
   logAvailableVoices() {
     if (this.voices.length === 0) return;
 
-    console.log('[Voice] Available voices:');
-    this.voices
-      .filter(v => v.lang && (v.lang.startsWith('zh') || v.lang.startsWith('en')))
-      .forEach((v, i) => {
-        const isCantonese = CANTONESE_KEYWORDS.some(k =>
-          v.name.toLowerCase().includes(k.toLowerCase())
-        );
-        const marker = isCantonese ? ' [CANTONESE]' : '';
-        console.log(`  ${i}: ${v.name} (${v.lang})${v.default ? ' [default]' : ''}${marker}`);
-      });
+    const allowedNames = GOOGLE_VOICES.map(g => g.name);
+    const available = this.voices.filter(v => allowedNames.includes(v.name));
+
+    console.log('[Voice] Available Google voices:');
+    available.forEach((v, i) => {
+      console.log(`  ${i}: ${v.name} (${v.lang})${v.default ? ' [default]' : ''}`);
+    });
+
+    if (available.length === 0) {
+      console.warn('[Voice] No Google voices found among', this.voices.length, 'system voices');
+    }
   }
 
   loadSettings() {
@@ -161,15 +158,13 @@ class VoiceManager {
     const voice = this.findBestVoice(targetLang);
     if (voice) {
       utter.voice = voice;
-      // 强制设置语言代码，iOS 需要这个
-      utter.lang = targetLang;
-      console.log(`[Voice] Using voice: ${voice.name} (${voice.lang}), utter.lang: ${targetLang}`);
+      utter.lang = voice.lang;
+      console.log(`[Voice] Using voice: ${voice.name} (${voice.lang})`);
     } else {
       utter.lang = targetLang;
       console.log(`[Voice] No voice found, using lang: ${targetLang}`);
     }
 
-    // iOS Safari 兼容性：确保属性设置成功
     console.log(`[Voice] Final utter.lang: ${utter.lang}, utter.voice: ${utter.voice?.name || 'null'}`);
 
     utter.rate = 1.1;
@@ -185,29 +180,11 @@ class VoiceManager {
       return [];
     }
 
-    const speechLang = SPEECH_LANG_MAP[lang] || SPEECH_LANG_MAP.zh;
-    const langPrefix = speechLang.split('-')[0];
+    const allowedNames = GOOGLE_VOICES.filter(g => g.category === lang).map(g => g.name);
 
-    let voices = this.voices.filter(v => {
-      if (!v.lang) return false;
-      const voiceLang = v.lang.toLowerCase().replace('_', '-');
-      const targetLang = speechLang.toLowerCase();
-      return voiceLang === targetLang || voiceLang.startsWith(langPrefix);
-    });
+    const voices = this.voices.filter(v => allowedNames.includes(v.name));
 
-    console.log('[Voice] Filtered voices for', lang, ':', voices.length, 'of', this.voices.length);
-
-    if (lang === 'zh') {
-      voices = voices.filter(v => {
-        return v.name.includes('中文（中国大陆）');
-      });
-      console.log('[Voice] After mainland China filter:', voices.length);
-    } else if (lang === 'en') {
-      voices = voices.filter(v => {
-        return v.name.includes('英语（美国）');
-      });
-      console.log('[Voice] After English US filter:', voices.length);
-    }
+    console.log('[Voice] Filtered Google voices for', lang, ':', voices.length, 'of', this.voices.length);
 
     return voices.map(v => ({
       name: v.name,
@@ -233,6 +210,7 @@ class VoiceManager {
 
     const testTexts = {
       zh: '这是语音测试',
+      yue: '呢個係語音測試',
       en: 'Voice test'
     };
 
@@ -243,11 +221,6 @@ class VoiceManager {
   findBestVoice(targetLang) {
     if (!this.voices.length) return null;
 
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-
-    // iOS 上需要避免有问题的语音
-    const problematicVoices = isIOS ? ['Samantha', 'Fred', 'Vicki', 'Victoria', 'Alex'] : [];
-
     if (this.voiceId) {
       const selectedVoice = this.getVoiceById(this.voiceId);
       if (selectedVoice) {
@@ -256,72 +229,22 @@ class VoiceManager {
       }
     }
 
-    const exactMatch = this.voices.find(v => v.lang === targetLang);
-    if (exactMatch) {
-      if (targetLang === 'zh-CN' && isIOS) {
-        const voiceName = exactMatch.name.toLowerCase();
-        if (CANTONESE_KEYWORDS.some(k => voiceName.includes(k.toLowerCase()))) {
-          console.log(`[Voice] Skipping ${exactMatch.name} (Cantonese on iOS)`);
-        } else {
-          return exactMatch;
-        }
-      } else if (targetLang === 'en-US' && isIOS) {
-        // iOS 英文模式避免某些有问题的语音
-        if (problematicVoices.some(p => exactMatch.name.toLowerCase().includes(p.toLowerCase()))) {
-          console.log(`[Voice] Skipping ${exactMatch.name} (problematic on iOS)`);
-        } else {
-          return exactMatch;
-        }
-      } else {
-        return exactMatch;
-      }
+    const allowedNames = GOOGLE_VOICES.map(g => g.name);
+    const googleVoices = this.voices.filter(v => allowedNames.includes(v.name));
+
+    const category = Object.entries(SPEECH_LANG_MAP).find(([, v]) => v === targetLang)?.[0] || 'zh';
+    const categoryNames = GOOGLE_VOICES.filter(g => g.category === category).map(g => g.name);
+    const categoryVoices = googleVoices.filter(v => categoryNames.includes(v.name));
+
+    if (categoryVoices.length > 0) {
+      console.log(`[Voice] Selected: ${categoryVoices[0].name} (${categoryVoices[0].lang})`);
+      return categoryVoices[0];
     }
 
-    const langPriority = {
-      'zh-CN': ['zh-CN', 'zh', 'zh-TW'],
-      'zh-HK': ['zh-HK', 'zh', 'zh-TW'],
-      'en-US': ['en-US', 'en-GB', 'en'],
-    };
-
-    const priorities = langPriority[targetLang];
-    if (priorities) {
-      for (const lang of priorities) {
-        let matches = this.voices.filter(v => v.lang === lang || v.lang.startsWith(lang + '-'));
-
-        if (targetLang === 'zh-CN') {
-          matches = matches.filter(v => {
-            const name = v.name.toLowerCase();
-            return !CANTONESE_KEYWORDS.some(k => name.includes(k.toLowerCase()));
-          });
-        }
-
-        if (targetLang === 'en-US' && isIOS) {
-          matches = matches.filter(v => {
-            const name = v.name.toLowerCase();
-            return !problematicVoices.some(p => name.includes(p.toLowerCase()));
-          });
-        }
-
-        if (targetLang === 'zh-CN' && matches.length > 0) {
-          const mandarinVoice = matches.find(v =>
-            MANDARIN_KEYWORDS.some(k => v.name.toLowerCase().includes(k.toLowerCase()))
-          );
-          if (mandarinVoice) {
-            console.log(`[Voice] Found Mandarin voice: ${mandarinVoice.name}`);
-            return mandarinVoice;
-          }
-        }
-
-        if (matches.length > 0) {
-          console.log(`[Voice] Selected: ${matches[0].name} (${matches[0].lang})`);
-          return matches[0];
-        }
-      }
+    if (googleVoices.length > 0) {
+      console.log(`[Voice] Fallback to: ${googleVoices[0].name} (${googleVoices[0].lang})`);
+      return googleVoices[0];
     }
-
-    const prefix = targetLang.split('-')[0];
-    const prefixMatch = this.voices.find(v => v.lang.startsWith(prefix));
-    if (prefixMatch) return prefixMatch;
 
     return this.voices[0];
   }

@@ -127,9 +127,11 @@ class PlankApp {
       console.log('[App] Voice list empty for lang', currentLang, ', retrying with raw voices');
       voices = voiceManager.voices.filter(v => {
         if (currentLang === 'zh') {
-          return v.lang && (v.lang.startsWith('zh') || v.lang.startsWith('cmn'));
+          return v.lang && (v.lang === 'zh-CN' || v.lang === 'zh-TW');
         } else if (currentLang === 'en') {
-          return v.lang && v.lang.startsWith('en');
+          return v.lang && v.lang === 'en-US';
+        } else if (currentLang === 'yue') {
+          return v.lang && v.lang === 'zh-HK';
         }
         return false;
       });
