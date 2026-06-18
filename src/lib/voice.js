@@ -80,19 +80,6 @@ class VoiceManager {
   }
 
   logAvailableVoices() {
-    if (this.voices.length === 0) return;
-
-    const allowedNames = GOOGLE_VOICES.map(g => g.name);
-    const available = this.voices.filter(v => allowedNames.includes(v.name));
-
-    console.log('[Voice] Available Google voices:');
-    available.forEach((v, i) => {
-      console.log(`  ${i}: ${v.name} (${v.lang})${v.default ? ' [default]' : ''}`);
-    });
-
-    if (available.length === 0) {
-      console.warn('[Voice] No Google voices found among', this.voices.length, 'system voices');
-    }
   }
 
   loadSettings() {
@@ -159,13 +146,9 @@ class VoiceManager {
     if (voice) {
       utter.voice = voice;
       utter.lang = voice.lang;
-      console.log(`[Voice] Using voice: ${voice.name} (${voice.lang})`);
     } else {
       utter.lang = targetLang;
-      console.log(`[Voice] No voice found, using lang: ${targetLang}`);
     }
-
-    console.log(`[Voice] Final utter.lang: ${utter.lang}, utter.voice: ${utter.voice?.name || 'null'}`);
 
     utter.rate = 1.1;
     utter.pitch = 1;
@@ -175,16 +158,11 @@ class VoiceManager {
   }
 
   getVoicesByLanguage(lang) {
-    if (!this.voices || this.voices.length === 0) {
-      console.warn('[Voice] Voices not loaded yet');
-      return [];
-    }
+    if (!this.voices || this.voices.length === 0) return [];
 
     const allowedNames = GOOGLE_VOICES.filter(g => g.category === lang).map(g => g.name);
 
     const voices = this.voices.filter(v => allowedNames.includes(v.name));
-
-    console.log('[Voice] Filtered Google voices for', lang, ':', voices.length, 'of', this.voices.length);
 
     return voices.map(v => ({
       name: v.name,
@@ -223,10 +201,7 @@ class VoiceManager {
 
     if (this.voiceId) {
       const selectedVoice = this.getVoiceById(this.voiceId);
-      if (selectedVoice) {
-        console.log(`[Voice] Using selected voice: ${selectedVoice.name} (${selectedVoice.lang})`);
-        return selectedVoice;
-      }
+      if (selectedVoice) return selectedVoice;
     }
 
     const allowedNames = GOOGLE_VOICES.map(g => g.name);
@@ -236,15 +211,9 @@ class VoiceManager {
     const categoryNames = GOOGLE_VOICES.filter(g => g.category === category).map(g => g.name);
     const categoryVoices = googleVoices.filter(v => categoryNames.includes(v.name));
 
-    if (categoryVoices.length > 0) {
-      console.log(`[Voice] Selected: ${categoryVoices[0].name} (${categoryVoices[0].lang})`);
-      return categoryVoices[0];
-    }
+    if (categoryVoices.length > 0) return categoryVoices[0];
 
-    if (googleVoices.length > 0) {
-      console.log(`[Voice] Fallback to: ${googleVoices[0].name} (${googleVoices[0].lang})`);
-      return googleVoices[0];
-    }
+    if (googleVoices.length > 0) return googleVoices[0];
 
     return this.voices[0];
   }

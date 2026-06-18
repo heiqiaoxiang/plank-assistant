@@ -124,7 +124,6 @@ class PlankApp {
     let voices = voiceManager.getVoicesByLanguage(currentLang);
 
     if (voices.length === 0 && voiceManager.voices.length > 0) {
-      console.log('[App] Voice list empty for lang', currentLang, ', retrying with raw voices');
       voices = voiceManager.voices.filter(v => {
         if (currentLang === 'zh') {
           return v.lang && (v.lang === 'zh-CN' || v.lang === 'zh-TW');
@@ -136,8 +135,6 @@ class PlankApp {
         return false;
       });
     }
-
-    console.log('[App] Available voices for', currentLang, ':', voices.length);
 
     const currentVoiceId = voiceManager.voiceId;
     this.els.voiceName.innerHTML = '<option value="" data-i18n="settings.defaultVoice">默认</option>';
@@ -182,10 +179,7 @@ class PlankApp {
   }
 
   async initSupabase() {
-    if (!supabase) {
-      console.log('[App] Supabase not configured, local-only mode');
-      return;
-    }
+    if (!supabase) return;
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -693,7 +687,6 @@ class PlankApp {
         }
         
         if (sourceData) {
-          console.log('[App] Migrating data from', sourceKey, 'to', key);
           stored = sourceData;
           localStorage.setItem(key, sourceData);
         }
@@ -1266,22 +1259,13 @@ class PlankApp {
   }
 
   async isEmailUserLoggedIn() {
-    if (!supabase) {
-      console.log('[App] Supabase not configured, user not logged in');
-      return false;
-    }
+    if (!supabase) return false;
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.log('[App] No active session');
-        return false;
-      }
+      if (!session) return false;
       const user = session.user;
-      const isEmailUser = user && user.email && !user.is_anonymous;
-      console.log('[App] isEmailUserLoggedIn:', isEmailUser);
-      return isEmailUser;
+      return !!(user && user.email && !user.is_anonymous);
     } catch (err) {
-      console.warn('[App] Error checking login status:', err.message);
       return false;
     }
   }
@@ -1725,11 +1709,9 @@ if (document.readyState === 'loading') {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    const isHttps = location.protocol === 'https:';
 
-    if (!isLocalhost) {
-      console.log('[App] Non-localhost environment, skipping service worker registration');
-      return;
-    }
+    if (!isLocalhost && !isHttps) return;
 
     navigator.serviceWorker.register('sw.js').catch(err => {
       console.warn('[App] Service worker registration failed:', err.message);
