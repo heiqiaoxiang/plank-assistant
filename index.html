@@ -7,9 +7,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="description" content="专注、高效的平板支撑训练助手">
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="/manifest.json">
   <link rel="icon" type="image/svg+xml" href="/icon.svg">
-  <link rel="apple-touch-icon" href="/icon.svg">
+  <link rel="apple-touch-icon" href="/icon-192.png">
   <title>Plank - 平板支撑助手</title>
   <link rel="stylesheet" href="src/styles/variables.css">
   <link rel="stylesheet" href="src/styles/main.css">
@@ -257,5 +257,12 @@
   <script type="module" src="src/lib/voice.js"></script>
   <script type="module" src="src/i18n/index.js"></script>
   <script type="module" src="src/core/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js');
+      });
+    }
+  </script>
 </body>
 </html>

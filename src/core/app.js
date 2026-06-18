@@ -1703,15 +1703,3 @@ if (document.readyState === 'loading') {
   initApp();
 }
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-    const isHttps = location.protocol === 'https:';
-
-    if (!isLocalhost && !isHttps) return;
-
-    navigator.serviceWorker.register('sw.js').catch(err => {
-      console.warn('[App] Service worker registration failed:', err.message);
-    });
-  });
-}
