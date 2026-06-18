@@ -9,8 +9,7 @@ import {
   INHALE_TIME, HOLD_TIME, EXHALE_TIME, PROGRESS_RING_CIRCUMFERENCE,
   HISTORY_LIMIT, ENCOURAGEMENT_FIRST_DELAY, ENCOURAGEMENT_INTERVAL,
   MIN_DURATION_FOR_ENCOURAGEMENT, SYNC_RETRY_INTERVAL, SW_UPDATE_INTERVAL,
-  CHECKPOINT_INTERVAL, CHECKPOINT_FIRST_OFFSET, GUIDE_INTERVAL, GUIDE_DISPLAY_TIME,
-  MODE_NAMES, COMPLETION_MESSAGES, ENCOURAGEMENT_MESSAGES, CHECKPOINT_MESSAGES, GUIDE_MESSAGES
+  CHECKPOINT_INTERVAL, CHECKPOINT_FIRST_OFFSET, GUIDE_INTERVAL, GUIDE_DISPLAY_TIME
 } from './constants.js';
 
 class PlankApp {
@@ -346,11 +345,11 @@ class PlankApp {
       indicator.style.display = 'none';
     } else if (this.state.isSyncing) {
       indicator.style.display = 'flex';
-      indicator.textContent = '同步中...';
+      indicator.textContent = i18n.t('sync.syncing');
       indicator.classList.add('syncing');
     } else {
       indicator.style.display = 'flex';
-      indicator.textContent = `${this.syncPending.length} 条待同步`;
+      indicator.textContent = i18n.t('sync.pending', { count: this.syncPending.length });
       indicator.classList.remove('syncing');
     }
   }
@@ -782,7 +781,7 @@ class PlankApp {
 
   selectMode(mode) {
     this.state.mode = mode;
-    this.els.modeText.textContent = MODE_NAMES[mode];
+    this.els.modeText.textContent = i18n.t(`modes.${mode}`);
     this.els.modeSelector.classList.remove('show');
     this.renderModeSelector();
   }
@@ -863,7 +862,7 @@ class PlankApp {
     }
 
     this.state.isRunning = true;
-    this.els.startBtn.textContent = '暂停';
+    this.els.startBtn.textContent = i18n.t('controls.pause');
     this.els.timerDisplay.classList.add('running');
     this.els.pauseIndicator.classList.remove('show');
     this.els.progressRingFill.classList.remove('paused');
@@ -880,7 +879,7 @@ class PlankApp {
     this.state.isRunning = false;
     this.state.isPaused = true;
     this.state.pauseStartTime = Date.now();
-    this.els.startBtn.textContent = '继续';
+    this.els.startBtn.textContent = i18n.t('controls.resume');
     this.els.pauseIndicator.classList.add('show');
     this.els.progressRingFill.classList.add('paused');
 
@@ -908,9 +907,9 @@ class PlankApp {
     this.stopEncouragement();
     this.stopGuide();
 
-    this.els.startBtn.textContent = '开始';
+    this.els.startBtn.textContent = i18n.t('controls.start');
     this.els.timerDisplay.classList.remove('running', 'warning');
-    this.els.breathText.textContent = '准备开始';
+    this.els.breathText.textContent = i18n.t('timer.status.ready');
     this.els.pauseIndicator.classList.remove('show');
     this.els.progressRingFill.classList.remove('paused', 'warning');
     this.updateProgressRing();
@@ -1062,7 +1061,7 @@ class PlankApp {
   showCheckpoint() {
     const checkpoint = document.createElement('div');
     checkpoint.className = 'checkpoint show';
-    const randomMessage = getRandomItem(CHECKPOINT_MESSAGES);
+    const randomMessage = getRandomItem(i18n.ta('checkpoint.items'));
     checkpoint.textContent = `📍 ${randomMessage}`;
     checkpoint.style.cssText = 'position:absolute;bottom:30%;left:50%;transform:translateX(-50%);font-size:14px;color:#ff6b6b;opacity:0;animation:checkpoint-pulse 2s ease-out forwards;';
     this.els.breathContainer.style.position = 'relative';
@@ -1122,7 +1121,7 @@ class PlankApp {
   }
 
   showGuide() {
-    const text = getRandomItem(GUIDE_MESSAGES);
+    const text = getRandomItem(i18n.ta('guide'));
     this.els.guideCard.textContent = text;
     this.els.guideCard.classList.add('show');
     this.speakGuide(text);
@@ -1139,7 +1138,7 @@ class PlankApp {
   showEncouragement() {
     const msg = document.createElement('div');
     msg.className = 'checkpoint show';
-    const randomMsg = getRandomItem(ENCOURAGEMENT_MESSAGES);
+    const randomMsg = getRandomItem(i18n.ta('encouragement'));
     msg.textContent = `💪 ${randomMsg}`;
     msg.style.cssText = 'position:absolute;bottom:25%;left:50%;transform:translateX(-50%);font-size:16px;color:#00d4aa;opacity:0;animation:checkpoint-pulse 2s ease-out forwards;';
     this.els.breathContainer.appendChild(msg);
@@ -1187,8 +1186,8 @@ class PlankApp {
       pausedCount
     });
 
-    this.els.completionTime.textContent = `${completedTime}秒`;
-    this.els.completionMessage.textContent = getRandomItem(COMPLETION_MESSAGES);
+    this.els.completionTime.textContent = `${completedTime}${i18n.t('history.duration')}`;
+    this.els.completionMessage.textContent = getRandomItem(i18n.ta('completion.message'));
     this.updateCompletionStats(pausedCount, pausedTime, actualTime);
     this.els.completionOverlay.classList.add('show');
     this.audioManager.playSuccessSound();
@@ -1200,7 +1199,7 @@ class PlankApp {
       }, 3000);
     }
 
-    this.els.startBtn.textContent = '开始';
+    this.els.startBtn.textContent = i18n.t('controls.start');
     this.els.timerDisplay.classList.remove('running', 'warning');
     this.els.pauseIndicator.classList.remove('show');
     this.els.progressRingFill.classList.remove('paused', 'warning');
@@ -1274,9 +1273,9 @@ class PlankApp {
     this.els.loginPassword.value = '';
     this.els.loginError.style.display = 'none';
     this.state.isLoginMode = true;
-    this.els.loginTitle.textContent = '登录后查看排行榜';
-    this.els.loginSubmitBtn.textContent = '登录';
-    this.els.loginSwitchBtn.textContent = '注册';
+    this.els.loginTitle.textContent = i18n.t('leaderboard.loginRequired');
+    this.els.loginSubmitBtn.textContent = i18n.t('login.signIn');
+    this.els.loginSwitchBtn.textContent = i18n.t('login.register');
   }
 
   hideLoginModal() {
@@ -1288,13 +1287,13 @@ class PlankApp {
     const password = this.els.loginPassword.value;
 
     if (!email || !password) {
-      this.els.loginError.textContent = '请输入邮箱和密码';
+      this.els.loginError.textContent = i18n.t('login.error.empty');
       this.els.loginError.style.display = 'block';
       return;
     }
 
     this.els.loginSubmitBtn.disabled = true;
-    this.els.loginSubmitBtn.textContent = '请稍候...';
+    this.els.loginSubmitBtn.textContent = i18n.t('login.loading');
 
     let result;
     if (this.state.isLoginMode) {
@@ -1304,7 +1303,7 @@ class PlankApp {
     }
 
     this.els.loginSubmitBtn.disabled = false;
-    this.els.loginSubmitBtn.textContent = this.state.isLoginMode ? '登录' : '注册';
+    this.els.loginSubmitBtn.textContent = this.state.isLoginMode ? i18n.t('login.signIn') : i18n.t('login.register');
 
     if (result.error) {
       this.els.loginError.textContent = result.error;
@@ -1320,9 +1319,9 @@ class PlankApp {
   handleLoginSwitch() {
     this.state.isLoginMode = !this.state.isLoginMode;
     this.els.loginError.style.display = 'none';
-    this.els.loginTitle.textContent = this.state.isLoginMode ? '登录后查看排行榜' : '注册后查看排行榜';
-    this.els.loginSubmitBtn.textContent = this.state.isLoginMode ? '登录' : '注册';
-    this.els.loginSwitchBtn.textContent = this.state.isLoginMode ? '注册' : '登录';
+    this.els.loginTitle.textContent = this.state.isLoginMode ? i18n.t('leaderboard.loginRequired') : i18n.t('leaderboard.registerRequired');
+    this.els.loginSubmitBtn.textContent = this.state.isLoginMode ? i18n.t('login.signIn') : i18n.t('login.register');
+    this.els.loginSwitchBtn.textContent = this.state.isLoginMode ? i18n.t('login.register') : i18n.t('login.signIn');
   }
 
   async updateUserBtn() {
@@ -1494,7 +1493,7 @@ class PlankApp {
     const history = this.data.history || [];
 
     if (history.length === 0) {
-      this.els.historyList.innerHTML = '<div class="history-empty">暂无训练记录</div>';
+      this.els.historyList.innerHTML = `<div class="history-empty">${i18n.t('history.empty')}</div>`;
       return;
     }
 
@@ -1502,9 +1501,11 @@ class PlankApp {
     this.els.historyList.innerHTML = sortedHistory.map(item => {
       const date = new Date(item.date);
       const dateStr = `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
-      const modeText = MODE_NAMES[item.mode] || '经典平板支撑';
-      const pauseText = item.pausedCount > 0 ? `暂停${item.pausedCount}次/${item.pausedTime}s` : '完美';
-      const durationText = item.duration + 's';
+      const modeText = i18n.t(`modes.${item.mode}`);
+      const pauseText = item.pausedCount > 0
+        ? i18n.t('completion.paused', { count: item.pausedCount, duration: item.pausedTime })
+        : i18n.t('history.perfect');
+      const durationText = item.duration + i18n.t('history.duration');
 
       return `
         <div class="history-item">
@@ -1524,7 +1525,7 @@ class PlankApp {
   renderChart() {
     const history = this.data.history || [];
     if (history.length === 0) {
-      this.els.trendPanel.innerHTML = '<div class="trend-empty">暂无数据</div>';
+      this.els.trendPanel.innerHTML = `<div class="trend-empty">${i18n.t('history.noData')}</div>`;
       return;
     }
 

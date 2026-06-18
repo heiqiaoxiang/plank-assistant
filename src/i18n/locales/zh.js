@@ -73,6 +73,7 @@ export default {
     title: '训练记录',
     trend: '趋势',
     empty: '暂无训练记录',
+    noData: '暂无数据',
     perfect: '完美',
     duration: '秒'
   },
@@ -92,6 +93,7 @@ export default {
     title: '登录后查看排行榜',
     register: '注册',
     signIn: '登录',
+    loading: '请稍候...',
     email: '邮箱',
     password: '密码',
     error: {
@@ -152,6 +154,22 @@ export default {
     confirm: '确认',
     cancel: '取消'
   },
+  sync: {
+    syncing: '同步中...',
+    pending: '{count} 条待同步'
+  },
+  guide: [
+    '腰酸了？假装有人朝你肚子泼水，腹肌瞬间收紧',
+    '腰塌了？想象头顶有绳子把你往上拽，保持挺直！',
+    '腹部没感觉？肚脐向脊柱收紧，像穿紧身衣！',
+    '臀部翘起来了？收紧找憋尿的感觉，马上归位！',
+    '肩膀酸了？把肩胛骨向臀部推送，瞬间放松！',
+    '肩膀耸起来了？让肩膀远离耳朵，保持下沉！',
+    '脖子累了？下巴轻夹隐形网球，目视地面！',
+    '喘不上气？用嘴像吸管吸气，缓慢呼出！',
+    '手肘疼？前臂垫个毛巾，缓冲一下！',
+    '身体晃了？双脚与肩同宽，像木桩一样站稳！'
+  ],
   errors: {
     supabaseNotConfigured: 'Supabase 未配置',
     logoutFailed: '退出登录失败，请重试'

@@ -74,7 +74,7 @@ class I18n {
   t(key, params = {}) {
     const keys = key.split('.');
     let value = this.translations;
-    
+
     for (const k of keys) {
       if (value && typeof value === 'object' && k in value) {
         value = value[k];
@@ -82,12 +82,26 @@ class I18n {
         return key;
       }
     }
-    
+
     if (typeof value === 'string') {
       return this.interpolate(value, params);
     }
-    
+
     return key;
+  }
+
+  // Returns array at key path, or fallback array
+  ta(key, fallback = []) {
+    const keys = key.split('.');
+    let value = this.translations;
+    for (const k of keys) {
+      if (value && typeof value === 'object' && k in value) {
+        value = value[k];
+      } else {
+        return fallback;
+      }
+    }
+    return Array.isArray(value) ? value : fallback;
   }
 
   interpolate(str, params) {

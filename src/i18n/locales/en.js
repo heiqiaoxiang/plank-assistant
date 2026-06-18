@@ -73,6 +73,7 @@ export default {
     title: 'Training History',
     trend: 'Trend',
     empty: 'No training records',
+    noData: 'No data',
     perfect: 'Perfect',
     duration: 's'
   },
@@ -92,6 +93,7 @@ export default {
     title: 'Sign in to view rankings',
     register: 'Sign Up',
     signIn: 'Sign In',
+    loading: 'Please wait...',
     email: 'Email',
     password: 'Password',
     error: {
@@ -152,6 +154,22 @@ export default {
     confirm: 'Confirm',
     cancel: 'Cancel'
   },
+  sync: {
+    syncing: 'Syncing...',
+    pending: '{count} pending'
+  },
+  guide: [
+    'Lower back aching? Imagine someone splashing water on your belly — brace your core!',
+    'Hips sagging? Picture a string pulling your head up — keep that spine straight!',
+    'Can\'t feel your abs? Draw your navel toward your spine, like you\'re wearing a corset!',
+    'Hips rising? Squeeze and tuck like you\'re stopping mid-flow — reset right now!',
+    'Shoulders burning? Push your shoulder blades toward your hips — instant relief!',
+    'Shoulders creeping up? Slide them away from your ears and press them down!',
+    'Neck tiring? Gently tuck your chin as if holding a tennis ball — eyes on the floor!',
+    'Can\'t catch your breath? Inhale slowly through your mouth like sipping through a straw!',
+    'Elbows hurting? Fold a towel under your forearms for extra cushioning!',
+    'Body wobbling? Feet shoulder-width apart — plant them like tree roots!'
+  ],
   errors: {
     supabaseNotConfigured: 'Supabase not configured',
     logoutFailed: 'Logout failed, please try again'

@@ -73,6 +73,7 @@ export default {
     title: '訓練記錄',
     trend: '趨勢',
     empty: '暫無訓練記錄',
+    noData: '暫無數據',
     perfect: '完美',
     duration: '秒'
   },
@@ -92,6 +93,7 @@ export default {
     title: '登入後查看排行榜',
     register: '註冊',
     signIn: '登入',
+    loading: '請稍候...',
     email: '電郵',
     password: '密碼',
     error: {
@@ -152,6 +154,22 @@ export default {
     confirm: '確認',
     cancel: '取消'
   },
+  sync: {
+    syncing: '同步中...',
+    pending: '{count} 條待同步'
+  },
+  guide: [
+    '腰痠咗？假裝有人向你肚子潑水，腹肌即刻收緊',
+    '腰塌咗？想像頭頂有繩子拉住你，保持挺直！',
+    '肚腩冇感覺？肚臍向脊柱收緊，好似著緊身衣！',
+    '臀部翹起咗？收緊搵憋尿嘅感覺，即刻歸位！',
+    '膊頭痠咗？將肩胛骨向臀部推，即刻放鬆！',
+    '膊頭聳起咗？讓膊頭遠離耳朵，保持下沉！',
+    '頸痠咗？下巴輕夾隱形網球，目視地面！',
+    '喘唔切氣？用口似飲管咁吸氣，慢慢呼出！',
+    '手肘痛？前臂墊條毛巾，緩衝一下！',
+    '身體搖晃？雙腳與肩同寬，好似木椿咁企穩！'
+  ],
   errors: {
     supabaseNotConfigured: 'Supabase 未配置',
     logoutFailed: '登出失敗，請重試'
