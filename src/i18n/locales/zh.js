@@ -129,13 +129,11 @@ export default {
   },
   languages: {
     zh: '简体中文',
-    en: 'English',
-    yue: '粤语'
+    en: 'English'
   },
   voiceTypes: {
     zh: '中文',
-    en: 'English',
-    yue: '粤语'
+    en: 'English'
   },
   voice: {
     inhale: '吸气',

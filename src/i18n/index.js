@@ -3,8 +3,7 @@ const STORAGE_KEY = 'plank_locale';
 
 const locales = {
   zh: 'zh-CN',
-  en: 'en-US',
-  yue: 'zh-HK'
+  en: 'en-US'
 };
 
 class I18n {

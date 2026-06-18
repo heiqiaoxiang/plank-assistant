@@ -4,7 +4,6 @@ const SETTINGS_KEY = 'plank_voice_settings';
 const GOOGLE_VOICES = [
   { name: 'Google 普通话（中国大陆）', lang: 'zh-CN', category: 'zh' },
   { name: 'Google 國語（臺灣）', lang: 'zh-TW', category: 'zh' },
-  { name: 'Google 粤語（香港）', lang: 'zh-HK', category: 'yue' },
   { name: 'Google US English', lang: 'en-US', category: 'en' }
 ];
 
@@ -17,8 +16,7 @@ const DEFAULT_SETTINGS = {
 
 const SPEECH_LANG_MAP = {
   zh: 'zh-CN',
-  en: 'en-US',
-  yue: 'zh-HK'
+  en: 'en-US'
 };
 
 class VoiceManager {

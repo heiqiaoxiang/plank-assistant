@@ -128,8 +128,6 @@ class PlankApp {
           return v.lang && (v.lang === 'zh-CN' || v.lang === 'zh-TW');
         } else if (currentLang === 'en') {
           return v.lang && v.lang === 'en-US';
-        } else if (currentLang === 'yue') {
-          return v.lang && v.lang === 'zh-HK';
         }
         return false;
       });
