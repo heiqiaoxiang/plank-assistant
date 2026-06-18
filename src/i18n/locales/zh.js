@@ -170,6 +170,7 @@ export default {
   ],
   errors: {
     supabaseNotConfigured: 'Supabase 未配置',
-    logoutFailed: '退出登录失败，请重试'
+    logoutFailed: '退出登录失败，请重试',
+    saveFailed: '保存失败，请重试'
   }
 };

@@ -129,61 +129,15 @@ test.describe('语音功能测试', () => {
     await page.screenshot({ path: 'test-results/screenshots/voice-toggle-test.png' });
   });
 
-  test('打开设置页面时语音名称选择器显示可用语音', async ({ page }) => {
+  test('语音名称选择器存在但对用户隐藏', async ({ page }) => {
     await page.click('#settingsBtn');
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(500);
 
-    await expect(page.locator('#voiceName')).toBeVisible();
-
-    const voiceNameOptions = await page.locator('#voiceName option').count();
-    expect(voiceNameOptions).toBeGreaterThanOrEqual(1);
-
-    await page.screenshot({ path: 'test-results/screenshots/voice-name-options-immediate.png' });
+    // voiceName exists in DOM but the row is hidden (simplified UI)
+    await expect(page.locator('#voiceName')).toBeAttached();
+    await expect(page.locator('#voiceNameRow')).toBeHidden();
 
     await page.click('#settingsClose');
-  });
-
-  test('语音名称选择器在开始后显示可用语音', async ({ page }) => {
-    await page.click('#startBtn');
-    await page.waitForTimeout(1000);
-
-    await page.click('#settingsBtn');
-    await page.waitForTimeout(300);
-
-    await expect(page.locator('#voiceName')).toBeVisible();
-
-    const voiceNameOptions = await page.locator('#voiceName option').count();
-    expect(voiceNameOptions).toBeGreaterThanOrEqual(1);
-
-    await page.screenshot({ path: 'test-results/screenshots/voice-name-options.png' });
-
-    await page.click('#settingsClose');
-    await page.click('#resetBtn');
-  });
-
-  test('可以选择具体语音名称', async ({ page }) => {
-    await page.click('#startBtn');
-    await page.waitForTimeout(1000);
-
-    await page.click('#settingsBtn');
-    await page.waitForTimeout(300);
-
-    const optionCount = await page.locator('#voiceName option').count();
-    if (optionCount > 1) {
-      const secondOption = await page.locator('#voiceName option').nth(1);
-      const voiceName = await secondOption.getAttribute('value');
-
-      await page.selectOption('#voiceName', voiceName);
-      await page.waitForTimeout(200);
-
-      const selectedValue = await page.locator('#voiceName').inputValue();
-      expect(selectedValue).toBe(voiceName);
-    }
-
-    await page.screenshot({ path: 'test-results/screenshots/voice-name-select.png' });
-
-    await page.click('#settingsClose');
-    await page.click('#resetBtn');
   });
 
   test('试听功能可以正常工作', async ({ page }) => {

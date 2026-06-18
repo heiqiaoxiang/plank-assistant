@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="src/styles/main.css">
 </head>
 <body>
+  <div id="toast-container"></div>
   <div id="app-container">
     <header class="header">
       <div class="version-badge" id="versionBadge">v1.0.7</div>
@@ -228,7 +229,7 @@
                 <option value="en" data-i18n="voiceTypes.en">English</option>
               </select>
             </div>
-            <div class="settings-row">
+            <div class="settings-row" style="display:none" id="voiceNameRow">
               <span data-i18n="settings.voiceName">选择语音</span>
               <select id="voiceName" class="settings-select">
                 <option value="" data-i18n="settings.defaultVoice">默认</option>

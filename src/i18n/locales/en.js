@@ -170,6 +170,7 @@ export default {
   ],
   errors: {
     supabaseNotConfigured: 'Supabase not configured',
-    logoutFailed: 'Logout failed, please try again'
+    logoutFailed: 'Logout failed, please try again',
+    saveFailed: 'Save failed, please try again'
   }
 };

@@ -4,7 +4,7 @@ import { voiceManager } from '../lib/voice.js';
 import { i18n } from '../i18n/index.js';
 import Chart from 'chart.js/auto';
 import { AudioManager } from './audio.js';
-import { debounce, getRandomItem } from './utils.js';
+import { debounce, getRandomItem, showToast } from './utils.js';
 import {
   INHALE_TIME, HOLD_TIME, EXHALE_TIME, PROGRESS_RING_CIRCUMFERENCE,
   HISTORY_LIMIT, ENCOURAGEMENT_FIRST_DELAY, ENCOURAGEMENT_INTERVAL,
@@ -1409,7 +1409,7 @@ class PlankApp {
           nickname: trimmed
         });
       } catch (e) {
-        console.warn('[App] Failed to save nickname:', e);
+        showToast(i18n.t('errors.saveFailed'), 'error');
       }
     }
   }
@@ -1436,8 +1436,7 @@ class PlankApp {
       this.hideSettings();
       await this.updateUserBtn();
     } catch (err) {
-      console.error('[App] Logout failed:', err.message);
-      alert(i18n.t('errors.logoutFailed') || '退出登录失败，请重试');
+      showToast(i18n.t('errors.logoutFailed'), 'error');
     }
   }
 
