@@ -679,11 +679,9 @@ class PlankApp {
         const baseKey = 'plank_data';
         
         let sourceData = localStorage.getItem(legacyKey);
-        let sourceKey = legacyKey;
-        
+
         if (!sourceData && this.userId) {
           sourceData = localStorage.getItem(baseKey);
-          sourceKey = baseKey;
         }
         
         if (sourceData) {

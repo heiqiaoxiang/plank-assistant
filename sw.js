@@ -1,14 +1,23 @@
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const CACHE_NAME = `plank-assistant-${CACHE_VERSION}`;
 const urlsToCache = [
   '/',
   '/index.html',
+  '/manifest.json',
+  '/src/styles/variables.css',
   '/src/styles/main.css',
   '/src/core/app.js',
-  '/manifest.json',
+  '/src/core/audio.js',
+  '/src/core/constants.js',
+  '/src/core/utils.js',
   '/src/lib/supabase.js',
   '/src/lib/auth.js',
-  '/src/lib/database.js'
+  '/src/lib/database.js',
+  '/src/lib/voice.js',
+  '/src/i18n/index.js',
+  '/src/i18n/locales/zh.js',
+  '/src/i18n/locales/en.js',
+  '/src/i18n/locales/yue.js'
 ];
 
 self.addEventListener('install', (event) => {
