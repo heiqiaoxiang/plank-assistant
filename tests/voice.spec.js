@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('语音功能测试', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:23366');
+    await page.goto('/');
   });
 
   test('默认中文模式下语音设置正确', async ({ page }) => {

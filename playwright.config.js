@@ -4,12 +4,12 @@ export default defineConfig({
   testDir: './tests',
   timeout: 30000,
   use: {
-    baseURL: 'http://localhost:23366',
+    baseURL: 'http://127.0.0.1:23366',
     headless: true,
   },
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:23366',
+    command: 'npm run dev -- --host 127.0.0.1',
+    url: 'http://127.0.0.1:23366',
     reuseExistingServer: true,
     timeout: 120000,
   },

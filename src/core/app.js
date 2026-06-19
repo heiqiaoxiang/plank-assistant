@@ -8,7 +8,7 @@ import { debounce, getRandomItem, showToast } from './utils.js';
 import {
   INHALE_TIME, HOLD_TIME, EXHALE_TIME, PROGRESS_RING_CIRCUMFERENCE,
   HISTORY_LIMIT, ENCOURAGEMENT_FIRST_DELAY, ENCOURAGEMENT_INTERVAL,
-  MIN_DURATION_FOR_ENCOURAGEMENT, SYNC_RETRY_INTERVAL, SW_UPDATE_INTERVAL,
+  MIN_DURATION_FOR_ENCOURAGEMENT, SYNC_RETRY_INTERVAL,
   CHECKPOINT_INTERVAL, CHECKPOINT_FIRST_OFFSET, GUIDE_INTERVAL, GUIDE_DISPLAY_TIME
 } from './constants.js';
 
@@ -85,7 +85,6 @@ class PlankApp {
       }
     });
 
-    this.els.breathText.textContent = i18n.t('timer.status.ready');
     const todayLabel = this.els.todayCount.closest('.stat-item')?.querySelector('.stat-label');
     if (todayLabel) todayLabel.textContent = i18n.t('stats.today');
     const weekLabel = this.els.weekCount.closest('.stat-item')?.querySelector('.stat-label');
@@ -93,7 +92,7 @@ class PlankApp {
     const totalLabel = this.els.totalTime.closest('.stat-item')?.querySelector('.stat-label');
     if (totalLabel) totalLabel.textContent = i18n.t('stats.total');
 
-    this.els.startBtn.textContent = i18n.t('controls.start');
+    this.updateTimerI18nState();
 
     if (this.els.loginTitle) {
       this.els.loginTitle.textContent = i18n.t('leaderboard.loginRequired');
@@ -175,6 +174,17 @@ class PlankApp {
     }
   }
 
+  buildSessionInsert(session, userId) {
+    return {
+      user_id: session.userId || userId,
+      duration: session.duration,
+      mode: session.mode,
+      paused_count: session.pausedCount || 0,
+      rest_duration: session.restDuration || session.pausedTime || 0,
+      completed_at: session.date || new Date().toISOString()
+    };
+  }
+
   async initSupabase() {
     if (!supabase) return;
 
@@ -246,12 +256,9 @@ class PlankApp {
     try {
       for (const session of toSync) {
         try {
-          const { error } = await supabase.from('sessions').insert({
-            user_id: session.userId || this.userId,
-            duration: session.duration,
-            mode: session.mode,
-            paused_count: session.pausedCount
-          });
+          const { error } = await supabase
+            .from('sessions')
+            .insert(this.buildSessionInsert(session, this.userId));
           if (!error) {
             this.syncPending = this.syncPending.filter(s => s.date !== session.date);
           } else {
@@ -280,12 +287,9 @@ class PlankApp {
     if (!this.userId) return;
 
     try {
-      const { error } = await supabase.from('sessions').insert({
-        user_id: this.userId,
-        duration: sessionData.duration,
-        mode: sessionData.mode,
-        paused_count: sessionData.pausedCount
-      });
+      const { error } = await supabase
+        .from('sessions')
+        .insert(this.buildSessionInsert(sessionData, this.userId));
       if (error) throw error;
       this.stopSyncRetry();
     } catch (err) {
@@ -350,6 +354,25 @@ class PlankApp {
       indicator.textContent = i18n.t('sync.pending', { count: this.syncPending.length });
       indicator.classList.remove('syncing');
     }
+  }
+
+  updateTimerI18nState() {
+    if (this.state.isRunning) {
+      this.els.startBtn.textContent = i18n.t('controls.pause');
+      if (['inhale', 'hold', 'exhale'].includes(this.state.breathPhase)) {
+        this.els.breathText.textContent = i18n.t(`timer.status.${this.state.breathPhase}`);
+      }
+      return;
+    }
+
+    if (this.state.isPaused) {
+      this.els.startBtn.textContent = i18n.t('controls.resume');
+      this.els.breathText.textContent = i18n.t('timer.status.paused');
+      return;
+    }
+
+    this.els.startBtn.textContent = i18n.t('controls.start');
+    this.els.breathText.textContent = i18n.t('timer.status.ready');
   }
 
   initElements() {
@@ -877,13 +900,14 @@ class PlankApp {
     this.state.isRunning = false;
     this.state.isPaused = true;
     this.state.pauseStartTime = Date.now();
-    this.els.startBtn.textContent = i18n.t('controls.resume');
+    this.updateTimerI18nState();
     this.els.pauseIndicator.classList.add('show');
     this.els.progressRingFill.classList.add('paused');
 
     clearInterval(this.state.intervalId);
     this.state.intervalId = null;
     this.stopBreathCycle();
+    this.setBreathPhase('paused');
     this.clearScheduledCheckpoints();
     this.stopEncouragement();
     this.stopGuide();
@@ -948,16 +972,16 @@ class PlankApp {
     const breathe = () => {
       if (!this.state.isRunning) return;
 
-      this.setBreathPhase('inhale', '吸气...');
+      this.setBreathPhase('inhale');
       this.animateBreathRing(1, 1.2, INHALE_TIME, 'ease-in-out');
 
       const inhaleTimeout = setTimeout(() => {
         if (!this.state.isRunning) return;
-        this.setBreathPhase('hold', '屏息...');
+        this.setBreathPhase('hold');
 
         const holdTimeout = setTimeout(() => {
           if (!this.state.isRunning) return;
-          this.setBreathPhase('exhale', '呼气...');
+          this.setBreathPhase('exhale');
           this.animateBreathRing(1.2, 1, EXHALE_TIME, 'ease-in-out');
 
           const exhaleTimeout = setTimeout(() => {
@@ -999,9 +1023,9 @@ class PlankApp {
     requestAnimationFrame(animate);
   }
 
-  setBreathPhase(phase, text) {
+  setBreathPhase(phase, text = null) {
     this.state.breathPhase = phase;
-    this.els.breathText.textContent = text;
+    this.els.breathText.textContent = text ?? i18n.t(`timer.status.${phase}`);
     this.triggerHaptic(phase);
   }
 
@@ -1150,19 +1174,22 @@ class PlankApp {
     clearInterval(this.state.intervalId);
     this.state.intervalId = null;
     this.stopBreathCycle();
+    this.clearScheduledCheckpoints();
+    this.stopEncouragement();
     this.stopGuide();
 
     const completedTime = this.state.duration;
     const pausedCount = this.state.pausedIntervals.length;
     const pausedTime = this.state.totalPausedTime;
-    const actualTime = completedTime - pausedTime;
+    const actualTime = completedTime;
+    const completedAt = new Date().toISOString();
 
     this.data.todayCount++;
     this.data.weekCount++;
     this.data.totalTime += actualTime;
     this.data.history = this.data.history || [];
     this.data.history.push({
-      date: new Date().toISOString(),
+      date: completedAt,
       duration: completedTime,
       mode: this.state.mode,
       pausedCount,
@@ -1178,10 +1205,11 @@ class PlankApp {
     this.updateStats();
 
     this.syncSessionToCloud({
-      date: new Date().toISOString(),
+      date: completedAt,
       duration: completedTime,
       mode: this.state.mode,
-      pausedCount
+      pausedCount,
+      restDuration: pausedTime
     });
 
     this.els.completionTime.textContent = `${completedTime}${i18n.t('history.duration')}`;
@@ -1441,49 +1469,77 @@ class PlankApp {
   }
 
   async loadLeaderboard(type = 'total_duration') {
+    this.els.leaderboardList.replaceChildren();
+
     if (!window.getLeaderboard) {
-      this.els.leaderboardList.innerHTML = '<div class="leaderboard-empty">排行榜暂不可用</div>';
+      this.renderLeaderboardEmpty(i18n.t('leaderboard.unavailable'));
       return;
     }
 
     const { data, error } = await window.getLeaderboard(type, 20);
 
     if (error || !data || data.length === 0) {
-      this.els.leaderboardList.innerHTML = '<div class="leaderboard-empty">暂无排行数据</div>';
+      this.renderLeaderboardEmpty(i18n.t('leaderboard.empty'));
       return;
     }
 
-    this.els.leaderboardList.innerHTML = `
-      <div class="leaderboard-type-selector">
-        <button class="leaderboard-type-btn ${type === 'total_duration' ? 'active' : ''}" data-type="total_duration">总时长</button>
-        <button class="leaderboard-type-btn ${type === 'total_sessions' ? 'active' : ''}" data-type="total_sessions">总次数</button>
-        <button class="leaderboard-type-btn ${type === 'week_duration' ? 'active' : ''}" data-type="week_duration">本周</button>
-      </div>
-      ${data.map((item, index) => {
-        const rankClass = index < 3 ? `top-${index + 1}` : '';
-        const nickname = item.profiles?.nickname || '健身达人';
-        const value = item.rank_value;
-        const displayValue = type === 'total_sessions' ? `${value}次` : `${Math.floor(value / 60)}m`;
+    const selector = document.createElement('div');
+    selector.className = 'leaderboard-type-selector';
 
-        return `
-          <div class="leaderboard-item">
-            <div class="leaderboard-rank ${rankClass}">${index + 1}</div>
-            <div class="leaderboard-info">
-              <div class="leaderboard-nickname">${nickname}</div>
-            </div>
-            <div class="leaderboard-value">${displayValue}</div>
-          </div>
-        `;
-      }).join('')}
-    `;
+    ['total_duration', 'total_sessions', 'week_duration'].forEach(rankType => {
+      const btn = document.createElement('button');
+      btn.className = 'leaderboard-type-btn';
+      btn.dataset.type = rankType;
+      btn.textContent = i18n.t(`leaderboard.types.${rankType}`);
+      btn.classList.toggle('active', type === rankType);
+      selector.appendChild(btn);
+    });
 
-    document.querySelectorAll('.leaderboard-type-btn').forEach(btn => {
+    this.els.leaderboardList.appendChild(selector);
+
+    data.forEach((item, index) => {
+      const rankClass = index < 3 ? `top-${index + 1}` : '';
+      const value = item.rank_value || 0;
+      const nickname = item.profiles?.nickname || item.nickname || '健身达人';
+      const displayValue = type === 'total_sessions' ? `${value}次` : `${Math.floor(value / 60)}m`;
+
+      const row = document.createElement('div');
+      row.className = 'leaderboard-item';
+
+      const rank = document.createElement('div');
+      rank.className = `leaderboard-rank ${rankClass}`.trim();
+      rank.textContent = String(item.rank_position || index + 1);
+
+      const info = document.createElement('div');
+      info.className = 'leaderboard-info';
+
+      const name = document.createElement('div');
+      name.className = 'leaderboard-nickname';
+      name.textContent = nickname;
+
+      const score = document.createElement('div');
+      score.className = 'leaderboard-value';
+      score.textContent = displayValue;
+
+      info.appendChild(name);
+      row.append(rank, info, score);
+      this.els.leaderboardList.appendChild(row);
+    });
+
+    this.els.leaderboardList.querySelectorAll('.leaderboard-type-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.leaderboard-type-btn').forEach(b => { b.classList.remove('active'); });
+        this.els.leaderboardList.querySelectorAll('.leaderboard-type-btn').forEach(b => { b.classList.remove('active'); });
         btn.classList.add('active');
         this.loadLeaderboard(btn.dataset.type);
       });
     });
+  }
+
+  renderLeaderboardEmpty(message) {
+    const empty = document.createElement('div');
+    empty.className = 'leaderboard-empty';
+    empty.textContent = message;
+    this.els.leaderboardList.replaceChildren(empty);
   }
 
   renderHistory() {
@@ -1521,10 +1577,20 @@ class PlankApp {
 
   renderChart() {
     const history = this.data.history || [];
+    const chartCanvas = this.ensureTrendCanvas();
+
     if (history.length === 0) {
-      this.els.trendPanel.innerHTML = `<div class="trend-empty">${i18n.t('history.noData')}</div>`;
+      if (this.trendChartInstance) {
+        this.trendChartInstance.destroy();
+        this.trendChartInstance = null;
+      }
+      chartCanvas.style.display = 'none';
+      this.renderTrendEmpty();
       return;
     }
+
+    this.clearTrendEmpty();
+    chartCanvas.style.display = '';
 
     const dailyData = {};
     history.forEach(item => {
@@ -1547,7 +1613,7 @@ class PlankApp {
       this.trendChartInstance.destroy();
     }
 
-    this.trendChartInstance = new Chart(this.els.trendChart, {
+    this.trendChartInstance = new Chart(chartCanvas, {
       type: 'line',
       data: {
         labels: labels,
@@ -1622,6 +1688,33 @@ class PlankApp {
         }
       }
     });
+  }
+
+  ensureTrendCanvas() {
+    if (!this.els.trendChart || !this.els.trendChart.isConnected) {
+      const canvas = document.createElement('canvas');
+      canvas.id = 'trendChart';
+      this.els.trendPanel.appendChild(canvas);
+      this.els.trendChart = canvas;
+    }
+    return this.els.trendChart;
+  }
+
+  renderTrendEmpty() {
+    let empty = this.els.trendPanel.querySelector('.trend-empty');
+    if (!empty) {
+      empty = document.createElement('div');
+      empty.className = 'trend-empty';
+      this.els.trendPanel.appendChild(empty);
+    }
+    empty.textContent = i18n.t('history.noData');
+  }
+
+  clearTrendEmpty() {
+    const empty = this.els.trendPanel.querySelector('.trend-empty');
+    if (empty) {
+      empty.remove();
+    }
   }
 
   hideCompletion() {
@@ -1701,4 +1794,3 @@ if (document.readyState === 'loading') {
 } else {
   initApp();
 }
-

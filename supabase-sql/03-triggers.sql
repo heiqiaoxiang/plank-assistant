@@ -23,13 +23,34 @@ SET search_path = public
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  INSERT INTO user_stats (user_id, total_sessions, total_duration, today_count, today_date)
-  VALUES (NEW.user_id, 1, NEW.duration, 1, CURRENT_DATE)
+  INSERT INTO user_stats (
+    user_id,
+    total_sessions,
+    total_duration,
+    today_count,
+    today_date,
+    week_count,
+    week_start_date,
+    updated_at
+  )
+  SELECT
+    NEW.user_id,
+    COUNT(*)::INT,
+    COALESCE(SUM(duration), 0)::INT,
+    COUNT(*) FILTER (WHERE completed_at::date = CURRENT_DATE)::INT,
+    CURRENT_DATE,
+    COUNT(*) FILTER (WHERE completed_at >= date_trunc('week', CURRENT_DATE))::INT,
+    date_trunc('week', CURRENT_DATE)::date,
+    NOW()
+  FROM sessions
+  WHERE user_id = NEW.user_id
   ON CONFLICT (user_id) DO UPDATE SET
-    total_sessions = user_stats.total_sessions + 1,
-    total_duration = user_stats.total_duration + NEW.duration,
-    today_count = CASE WHEN user_stats.today_date = CURRENT_DATE THEN user_stats.today_count + 1 ELSE 1 END,
-    today_date = CURRENT_DATE,
+    total_sessions = EXCLUDED.total_sessions,
+    total_duration = EXCLUDED.total_duration,
+    today_count = EXCLUDED.today_count,
+    today_date = EXCLUDED.today_date,
+    week_count = EXCLUDED.week_count,
+    week_start_date = EXCLUDED.week_start_date,
     updated_at = NOW();
   RETURN NEW;
 END;

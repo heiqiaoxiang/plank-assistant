@@ -21,7 +21,8 @@ export async function saveSession(sessionData) {
     duration: sessionData.duration,
     mode: sessionData.mode,
     paused_count: sessionData.pausedCount || 0,
-    rest_duration: sessionData.restDuration || 0
+    rest_duration: sessionData.restDuration || sessionData.pausedTime || 0,
+    completed_at: sessionData.date || new Date().toISOString()
   });
 
   if (error) {
@@ -110,7 +111,7 @@ async function updateUserStats(userId) {
       total_sessions: sessions.length,
       total_duration: totalDuration,
       today_count: todaySessions.length,
-      today_date: new Date().toDateString(),
+      today_date: new Date().toISOString().split('T')[0],
       week_count: weekSessions.length,
       week_start_date: weekStart.toISOString().split('T')[0]
     }, {
@@ -134,27 +135,28 @@ export async function getLeaderboard(type = 'total_duration', limit = 10) {
     return { data: [] };
   }
 
-  const { data, error } = await supabase
-    .from('leaderboard')
-    .select(`
-      rank_position,
-      rank_value,
-      period_start,
-      profiles (
-        nickname,
-        avatar_url
-      )
-    `)
-    .eq('rank_type', type)
-    .order('rank_position', { ascending: true })
-    .limit(limit);
+  const { data, error } = await supabase.rpc('get_leaderboard', {
+    p_rank_type: type,
+    p_limit: limit
+  });
 
   if (error) {
     console.error('[DB] Error fetching leaderboard:', error);
     return { data: [], error };
   }
 
-  return { data };
+  return {
+    data: (data || []).map(row => ({
+      rank_position: row.rank_position,
+      rank_value: row.rank_value,
+      duration_formatted: row.duration_formatted,
+      nickname: row.nickname,
+      profiles: {
+        nickname: row.nickname,
+        avatar_url: row.avatar_url
+      }
+    }))
+  };
 }
 
 export async function migrateLocalData() {
@@ -229,10 +231,10 @@ async function saveSessionLocal(sessionData) {
   const data = await loadLocalData();
   data.todayCount = (data.todayCount || 0) + 1;
   data.weekCount = (data.weekCount || 0) + 1;
-  data.totalTime = (data.totalTime || 0) + (sessionData.duration - (sessionData.pausedTime || 0));
+  data.totalTime = (data.totalTime || 0) + sessionData.duration;
   data.history = data.history || [];
   data.history.push({
-    date: new Date().toISOString(),
+    date: sessionData.date || new Date().toISOString(),
     duration: sessionData.duration,
     mode: sessionData.mode,
     pausedCount: sessionData.pausedCount || 0,

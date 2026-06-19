@@ -104,4 +104,120 @@ test.describe('Plank App', () => {
     await expect(timerDisplay).toHaveText('60');
     await expect(startBtn).toHaveText('开始');
   });
+
+  test('leaderboard renders cloud nicknames as safe text', async ({ page }) => {
+    await page.evaluate(async () => {
+      window.__leaderboardXss = false;
+      window.getLeaderboard = async () => ({
+        data: [{
+          rank_position: 1,
+          rank_value: 60,
+          profiles: {
+            nickname: '<img src=x onerror="window.__leaderboardXss=true">'
+          }
+        }]
+      });
+      await window.app.loadLeaderboard('total_duration');
+    });
+
+    await expect(page.locator('.leaderboard-nickname')).toHaveText('<img src=x onerror="window.__leaderboardXss=true">');
+    await expect(page.locator('.leaderboard-nickname img')).toHaveCount(0);
+    const xssRan = await page.evaluate(() => window.__leaderboardXss);
+    expect(xssRan).toBe(false);
+    await page.screenshot({ path: 'test-results/screenshots/regression-leaderboard-safe-text.png' });
+  });
+
+  test('trend chart recovers after rendering empty state', async ({ page }) => {
+    await page.locator('#historyBtn').click();
+    await page.locator('.history-tab[data-tab="trend"]').click();
+
+    await page.evaluate(() => {
+      window.app.data.history = [];
+      window.app.renderChart();
+    });
+
+    await expect(page.locator('.trend-empty')).toBeVisible();
+    await expect(page.locator('#trendChart')).toBeAttached();
+
+    await page.evaluate(() => {
+      window.app.data.history = [{
+        date: new Date().toISOString(),
+        duration: 60,
+        mode: 'classic',
+        pausedCount: 0,
+        pausedTime: 0,
+        restDuration: 0
+      }];
+      window.app.renderChart();
+    });
+
+    await expect(page.locator('.trend-empty')).toHaveCount(0);
+    await expect(page.locator('#trendChart')).toBeVisible();
+    await page.screenshot({ path: 'test-results/screenshots/regression-trend-recovers-after-empty.png' });
+  });
+
+  test('language switch preserves active timer state', async ({ page }) => {
+    await page.locator('#startBtn').click();
+    await expect(page.locator('#startBtn')).toHaveText('暂停');
+
+    await page.locator('#settingsBtn').click();
+    await page.locator('.lang-btn[data-lang="en"]').click();
+
+    const isRunning = await page.evaluate(() => window.app.state.isRunning);
+    expect(isRunning).toBe(true);
+    await expect(page.locator('#startBtn')).toHaveText('Pause');
+    await expect(page.locator('#breathText')).not.toHaveText('Get Ready');
+    await page.screenshot({ path: 'test-results/screenshots/regression-language-switch-running.png' });
+  });
+
+  test('paused sessions count active training duration once', async ({ page }) => {
+    const result = await page.evaluate(() => {
+      window.app.data = {
+        todayCount: 0,
+        weekCount: 0,
+        totalTime: 0,
+        lastDate: new Date().toDateString(),
+        history: [],
+        nickname: ''
+      };
+      window.app.setDuration(30);
+      window.app.state.pausedIntervals = [5];
+      window.app.state.totalPausedTime = 5;
+      window.app.complete();
+      const last = window.app.data.history.at(-1);
+      return {
+        totalTime: window.app.data.totalTime,
+        actualTime: last.actualTime,
+        restDuration: last.restDuration,
+        pausedTime: last.pausedTime
+      };
+    });
+
+    expect(result).toEqual({
+      totalTime: 30,
+      actualTime: 30,
+      restDuration: 5,
+      pausedTime: 5
+    });
+    await page.screenshot({ path: 'test-results/screenshots/regression-paused-duration.png' });
+  });
+
+  test('cloud sync payload preserves completion and rest metadata', async ({ page }) => {
+    const payload = await page.evaluate(() => window.app.buildSessionInsert({
+      date: '2026-06-18T12:34:56.000Z',
+      duration: 45,
+      mode: 'classic',
+      pausedCount: 2,
+      restDuration: 7
+    }, 'user-123'));
+
+    expect(payload).toEqual({
+      user_id: 'user-123',
+      duration: 45,
+      mode: 'classic',
+      paused_count: 2,
+      rest_duration: 7,
+      completed_at: '2026-06-18T12:34:56.000Z'
+    });
+  });
 });

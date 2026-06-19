@@ -3,8 +3,8 @@ import { test, expect } from '@playwright/test';
 test.describe('Mobile Touch Interaction', () => {
   test.use({ viewport: { width: 375, height: 667 }, hasTouch: true });
 
-  test('start button responds to touch on localhost', async ({ page }) => {
-    await page.goto('http://localhost:23366/');
+  test('start button responds to touch', async ({ page }) => {
+    await page.goto('/');
     await page.waitForTimeout(2000);
 
     const startBtn = page.locator('#startBtn');

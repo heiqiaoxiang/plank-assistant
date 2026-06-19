@@ -22,9 +22,57 @@ BEGIN
   FROM sessions WHERE completed_at >= week_start GROUP BY user_id ORDER BY SUM(duration) DESC;
   
   WITH ranked AS (
-    SELECT id, ROW_NUMBER() OVER (ORDER BY rank_value DESC) as pos FROM leaderboard
+    SELECT
+      id,
+      ROW_NUMBER() OVER (
+        PARTITION BY rank_type, period_start
+        ORDER BY rank_value DESC
+      ) as pos
+    FROM leaderboard
   )
   UPDATE leaderboard l SET rank_position = r.pos FROM ranked r WHERE l.id = r.id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION update_stats_on_session()
+RETURNS TRIGGER
+SECURITY DEFINER
+SET search_path = public
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  INSERT INTO user_stats (
+    user_id,
+    total_sessions,
+    total_duration,
+    today_count,
+    today_date,
+    week_count,
+    week_start_date,
+    updated_at
+  )
+  SELECT
+    NEW.user_id,
+    COUNT(*)::INT,
+    COALESCE(SUM(duration), 0)::INT,
+    COUNT(*) FILTER (WHERE completed_at::date = CURRENT_DATE)::INT,
+    CURRENT_DATE,
+    COUNT(*) FILTER (WHERE completed_at >= date_trunc('week', CURRENT_DATE))::INT,
+    date_trunc('week', CURRENT_DATE)::date,
+    NOW()
+  FROM sessions
+  WHERE user_id = NEW.user_id
+  ON CONFLICT (user_id) DO UPDATE SET
+    total_sessions = EXCLUDED.total_sessions,
+    total_duration = EXCLUDED.total_duration,
+    today_count = EXCLUDED.today_count,
+    today_date = EXCLUDED.today_date,
+    week_count = EXCLUDED.week_count,
+    week_start_date = EXCLUDED.week_start_date,
+    updated_at = NOW();
+
+  PERFORM refresh_leaderboard();
+  RETURN NEW;
 END;
 $$;
 
