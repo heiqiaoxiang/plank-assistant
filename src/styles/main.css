@@ -581,7 +581,7 @@ body {
   -webkit-user-select: none;
 }
 
-button, .action-btn, .preset, .mode-btn, .mode-option, .btn, .history-tab, .leaderboard-type-btn, .lang-btn, .settings-action-btn {
+button, .action-btn, .preset, .mode-btn, .mode-option, .btn, .history-tab, .leaderboard-type-btn, .lang-btn, .settings-action-btn, .home-history-link {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   cursor: pointer;
@@ -905,6 +905,97 @@ button, .action-btn, .preset, .mode-btn, .mode-option, .btn, .history-tab, .lead
 
 .action-icon {
   font-size: 18px;
+}
+
+.home-history {
+  width: 100%;
+  flex: 1;
+  min-height: 128px;
+  display: flex;
+  flex-direction: column;
+  margin-top: 4px;
+  padding: 14px;
+  background: var(--surface);
+  border-radius: 16px;
+}
+
+.home-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.home-history-header h2 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.home-history-link {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 13px;
+  padding: 6px 4px;
+  cursor: pointer;
+}
+
+.home-history-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.home-history-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  align-items: center;
+  padding: 9px 0;
+  border-top: 1px solid #2a2a2a;
+}
+
+.home-history-left {
+  min-width: 0;
+}
+
+.home-history-date {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.home-history-mode,
+.home-history-status {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home-history-duration {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.home-history-status {
+  grid-column: 2;
+  grid-row: 2;
+  text-align: right;
+  max-width: 150px;
+}
+
+.home-history-empty {
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  font-size: 14px;
 }
 
 /* Login Modal */

@@ -16,6 +16,7 @@ test.describe('Profile Settings', () => {
     const emailText = await page.locator('#profileEmail').textContent();
     expect(emailText).toMatch(/游客|Guest|遊客/);
 
+    await expect(page.locator('#loginBtn')).toBeVisible();
     await expect(page.locator('#logoutBtn')).not.toBeVisible();
   });
 

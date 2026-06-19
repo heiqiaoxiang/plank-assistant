@@ -8,16 +8,30 @@ test.describe('Login Flow', () => {
     await page.waitForTimeout(500);
   });
 
-  test('leaderboard shows login modal when not authenticated', async ({ page }) => {
-    await page.locator('#leaderboardBtn').click();
+  async function openLoginFromProfile(page) {
+    await page.locator('#settingsBtn').click();
+    await expect(page.locator('#settingsOverlay')).toHaveClass(/show/);
+    await expect(page.locator('#loginBtn')).toBeVisible();
+    await page.locator('#loginBtn').click();
 
     await expect(page.locator('#loginModal')).toHaveClass(/show/, { timeout: 8000 });
     await expect(page.locator('#loginModal')).toBeVisible();
+  }
+
+  test('leaderboard opens ranking without becoming a login entry', async ({ page }) => {
+    await page.locator('#leaderboardBtn').click();
+
+    await expect(page.locator('#leaderboardOverlay')).toHaveClass(/show/, { timeout: 8000 });
+    await expect(page.locator('#loginModal')).not.toHaveClass(/show/);
+  });
+
+  test('profile account section opens login modal for guests', async ({ page }) => {
+    await openLoginFromProfile(page);
+    await expect(page.locator('#loginTitle')).toContainText('登录');
   });
 
   test('can switch between login and signup', async ({ page }) => {
-    await page.locator('#leaderboardBtn').click();
-    await expect(page.locator('#loginModal')).toHaveClass(/show/);
+    await openLoginFromProfile(page);
 
     const loginSwitchBtn = page.locator('#loginSwitchBtn');
     await loginSwitchBtn.click();
@@ -27,8 +41,7 @@ test.describe('Login Flow', () => {
   });
 
   test('login form validation', async ({ page }) => {
-    await page.locator('#leaderboardBtn').click();
-    await expect(page.locator('#loginModal')).toHaveClass(/show/);
+    await openLoginFromProfile(page);
 
     await page.locator('#loginSubmitBtn').click();
 
@@ -37,8 +50,7 @@ test.describe('Login Flow', () => {
   });
 
   test('can close login modal', async ({ page }) => {
-    await page.locator('#leaderboardBtn').click();
-    await expect(page.locator('#loginModal')).toHaveClass(/show/);
+    await openLoginFromProfile(page);
 
     await page.locator('#loginClose').click();
 

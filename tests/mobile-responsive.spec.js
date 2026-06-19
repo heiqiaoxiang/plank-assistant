@@ -69,8 +69,9 @@ test.describe('Mobile Responsive', () => {
       
       await leaderboardBtn.tap();
       
-      const loginModal = page.locator('#loginModal');
-      await expect(loginModal).toHaveClass(/show/);
+      const leaderboardOverlay = page.locator('#leaderboardOverlay');
+      await expect(leaderboardOverlay).toHaveClass(/show/);
+      await expect(page.locator('#loginModal')).not.toHaveClass(/show/);
     });
 
     test('preset buttons respond to touch', async ({ page }) => {
@@ -106,7 +107,8 @@ test.describe('Mobile Responsive', () => {
       await expect(page.locator('#historyOverlay')).not.toHaveClass(/show/);
 
       await leaderboardBtn.click();
-      await expect(page.locator('#loginModal')).toHaveClass(/show/);
+      await expect(page.locator('#leaderboardOverlay')).toHaveClass(/show/);
+      await expect(page.locator('#loginModal')).not.toHaveClass(/show/);
     });
   });
 });

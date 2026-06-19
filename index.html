@@ -80,6 +80,14 @@
           <span class="action-text" data-i18n="actions.leaderboard">排行</span>
         </button>
       </div>
+
+      <section class="home-history" id="homeHistory" aria-labelledby="homeHistoryTitle">
+        <div class="home-history-header">
+          <h2 id="homeHistoryTitle" data-i18n="homeHistory.title">最近训练</h2>
+          <button class="home-history-link" id="homeHistoryViewAll" type="button" data-i18n="homeHistory.viewAll">全部</button>
+        </div>
+        <div class="home-history-list" id="homeHistoryList"></div>
+      </section>
     </main>
 
       <div class="mode-selector" id="modeSelector">
@@ -151,7 +159,7 @@
     <div class="login-modal" id="loginModal">
       <div class="login-content">
         <div class="login-header">
-          <h3 id="loginTitle">登录后查看排行榜</h3>
+          <h3 id="loginTitle">登录 / 注册账号</h3>
           <button class="login-close" id="loginClose">×</button>
         </div>
         <div class="login-form">
@@ -243,6 +251,9 @@
 
           <div class="settings-group">
             <div class="settings-group-title" data-i18n="settings.account">账户</div>
+            <button class="settings-action-btn" id="loginBtn" data-i18n="settings.login">
+              登录 / 注册
+            </button>
             <button class="settings-action-btn danger" id="logoutBtn" data-i18n="settings.logout">
               退出登录
             </button>

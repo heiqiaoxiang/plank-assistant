@@ -77,6 +77,12 @@ export default {
     perfect: '完美',
     duration: '秒'
   },
+  homeHistory: {
+    title: '最近训练',
+    viewAll: '全部',
+    empty: '暂无训练记录',
+    perfect: '完美'
+  },
   leaderboard: {
     title: '排行榜',
     loginRequired: '登录后查看排行榜',
@@ -90,7 +96,8 @@ export default {
     }
   },
   login: {
-    title: '登录后查看排行榜',
+    title: '登录 / 注册账号',
+    registerTitle: '注册账号',
     register: '注册',
     signIn: '登录',
     loading: '请稍候...',
@@ -121,6 +128,7 @@ export default {
     reminders: '训练提醒',
     reminderEnabled: '每日提醒',
     account: '账户',
+    login: '登录 / 注册',
     logout: '退出登录',
     nickname: '设置昵称',
     sessions: '训练次数',

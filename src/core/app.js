@@ -95,8 +95,10 @@ class PlankApp {
     this.updateTimerI18nState();
 
     if (this.els.loginTitle) {
-      this.els.loginTitle.textContent = i18n.t('leaderboard.loginRequired');
+      this.els.loginTitle.textContent = this.state.isLoginMode ? i18n.t('login.title') : i18n.t('login.registerTitle');
     }
+
+    this.renderHomeHistory();
 
     document.title = i18n.t('app.title');
   }
@@ -411,6 +413,8 @@ class PlankApp {
       pauseIndicator: document.getElementById('pauseIndicator'),
       historyBtn: document.getElementById('historyBtn'),
       leaderboardBtn: document.getElementById('leaderboardBtn'),
+      homeHistoryList: document.getElementById('homeHistoryList'),
+      homeHistoryViewAll: document.getElementById('homeHistoryViewAll'),
       guideCard: document.getElementById('guideCard'),
       loginModal: document.getElementById('loginModal'),
       loginEmail: document.getElementById('loginEmail'),
@@ -434,6 +438,7 @@ class PlankApp {
       voiceName: document.getElementById('voiceName'),
       voiceTestBtn: document.getElementById('voiceTestBtn'),
       langBtns: document.querySelectorAll('.lang-btn'),
+      loginBtn: document.getElementById('loginBtn'),
       logoutBtn: document.getElementById('logoutBtn'),
       leaderboardOverlay: document.getElementById('leaderboardOverlay'),
       leaderboardClose: document.getElementById('leaderboardClose')
@@ -545,15 +550,12 @@ class PlankApp {
     };
     safeBind(this.els.historyBtn, 'click', handleHistoryBtn);
     safeBind(this.els.historyBtn, 'touchend', handleHistoryBtn, { passive: false });
+    safeBind(this.els.homeHistoryViewAll, 'click', handleHistoryBtn);
+    safeBind(this.els.homeHistoryViewAll, 'touchend', handleHistoryBtn, { passive: false });
 
-    const handleLeaderboardBtn = async (e) => {
+    const handleLeaderboardBtn = (e) => {
       e.preventDefault();
-      const isLoggedIn = await this.isEmailUserLoggedIn();
-      if (isLoggedIn) {
-        this.showLeaderboard();
-      } else {
-        this.showLoginModal();
-      }
+      this.showLeaderboard();
     };
     safeBind(this.els.leaderboardBtn, 'click', handleLeaderboardBtn);
     safeBind(this.els.leaderboardBtn, 'touchend', handleLeaderboardBtn, { passive: false });
@@ -664,6 +666,13 @@ class PlankApp {
     this.els.voiceTestBtn?.addEventListener('click', () => {
       voiceManager.testVoice();
     });
+
+    const handleLogin = (e) => {
+      e.preventDefault();
+      this.showLoginModal();
+    };
+    safeBind(this.els.loginBtn, 'click', handleLogin);
+    safeBind(this.els.loginBtn, 'touchend', handleLogin, { passive: false });
 
     const handleLogout = (e) => {
       e.preventDefault();
@@ -781,6 +790,9 @@ class PlankApp {
     this.els.todayCount.textContent = this.data.todayCount;
     this.els.weekCount.textContent = this.data.weekCount;
     this.els.totalTime.textContent = this.formatDuration(this.data.totalTime);
+    if (i18n.loaded) {
+      this.renderHomeHistory();
+    }
   }
 
   formatDuration(seconds) {
@@ -1299,7 +1311,7 @@ class PlankApp {
     this.els.loginPassword.value = '';
     this.els.loginError.style.display = 'none';
     this.state.isLoginMode = true;
-    this.els.loginTitle.textContent = i18n.t('leaderboard.loginRequired');
+    this.els.loginTitle.textContent = i18n.t('login.title');
     this.els.loginSubmitBtn.textContent = i18n.t('login.signIn');
     this.els.loginSwitchBtn.textContent = i18n.t('login.register');
   }
@@ -1339,13 +1351,12 @@ class PlankApp {
 
     this.hideLoginModal();
     await this.updateUserBtn();
-    this.showLeaderboard();
   }
 
   handleLoginSwitch() {
     this.state.isLoginMode = !this.state.isLoginMode;
     this.els.loginError.style.display = 'none';
-    this.els.loginTitle.textContent = this.state.isLoginMode ? i18n.t('leaderboard.loginRequired') : i18n.t('leaderboard.registerRequired');
+    this.els.loginTitle.textContent = this.state.isLoginMode ? i18n.t('login.title') : i18n.t('login.registerTitle');
     this.els.loginSubmitBtn.textContent = this.state.isLoginMode ? i18n.t('login.signIn') : i18n.t('login.register');
     this.els.loginSwitchBtn.textContent = this.state.isLoginMode ? i18n.t('login.register') : i18n.t('login.signIn');
   }
@@ -1391,6 +1402,7 @@ class PlankApp {
     const totalMinutes = Math.floor((this.data.totalTime || 0) / 60);
     this.els.profileTotalTime.textContent = `${totalMinutes}m`;
 
+    this.els.loginBtn.style.display = isEmailUser ? 'none' : 'block';
     this.els.logoutBtn.style.display = isEmailUser ? 'block' : 'none';
   }
 
@@ -1573,6 +1585,52 @@ class PlankApp {
         </div>
       `;
     }).join('');
+  }
+
+  renderHomeHistory() {
+    if (!this.els.homeHistoryList) return;
+
+    const history = this.data.history || [];
+    this.els.homeHistoryList.replaceChildren();
+
+    if (history.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'home-history-empty';
+      empty.textContent = i18n.t('homeHistory.empty');
+      this.els.homeHistoryList.appendChild(empty);
+      return;
+    }
+
+    history.slice(-3).reverse().forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'home-history-item';
+
+      const left = document.createElement('div');
+      left.className = 'home-history-left';
+
+      const date = new Date(item.date);
+      const dateEl = document.createElement('div');
+      dateEl.className = 'home-history-date';
+      dateEl.textContent = `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+
+      const modeEl = document.createElement('div');
+      modeEl.className = 'home-history-mode';
+      modeEl.textContent = i18n.t(`modes.${item.mode}`);
+
+      const duration = document.createElement('div');
+      duration.className = 'home-history-duration';
+      duration.textContent = `${item.duration}${i18n.t('history.duration')}`;
+
+      const status = document.createElement('div');
+      status.className = 'home-history-status';
+      status.textContent = item.pausedCount > 0
+        ? i18n.t('completion.paused', { count: item.pausedCount, duration: item.pausedTime })
+        : i18n.t('homeHistory.perfect');
+
+      left.append(dateEl, modeEl);
+      row.append(left, duration, status);
+      this.els.homeHistoryList.appendChild(row);
+    });
   }
 
   renderChart() {

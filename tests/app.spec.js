@@ -29,15 +29,64 @@ test.describe('Plank App', () => {
     await expect(historyOverlay).toHaveClass(/show/);
   });
 
-  test('leaderboard button shows login modal', async ({ page }) => {
+  test('leaderboard button opens leaderboard without login modal', async ({ page }) => {
     const leaderboardBtn = page.locator('#leaderboardBtn');
     await expect(leaderboardBtn).toBeVisible();
     
     await leaderboardBtn.click();
     
-    await page.waitForSelector('#loginModal.show', { timeout: 8000 });
-    const loginModal = page.locator('#loginModal');
-    await expect(loginModal).toBeVisible();
+    await expect(page.locator('#leaderboardOverlay')).toHaveClass(/show/, { timeout: 8000 });
+    await expect(page.locator('#loginModal')).not.toHaveClass(/show/);
+  });
+
+  test('home shows recent training empty state', async ({ page }) => {
+    await expect(page.locator('#homeHistory')).toBeVisible();
+    await expect(page.locator('#homeHistoryTitle')).toContainText('最近训练');
+    await expect(page.locator('.home-history-empty')).toContainText('暂无训练记录');
+    await page.screenshot({ path: 'test-results/screenshots/home-recent-training-empty.png', fullPage: false });
+  });
+
+  test('home recent training shows latest sessions and opens full history', async ({ page }) => {
+    await page.evaluate(() => {
+      window.app.data.history = [
+        {
+          date: '2026-06-18T08:00:00.000Z',
+          duration: 30,
+          mode: 'classic',
+          pausedCount: 0,
+          pausedTime: 0
+        },
+        {
+          date: '2026-06-18T09:00:00.000Z',
+          duration: 60,
+          mode: 'side-left',
+          pausedCount: 1,
+          pausedTime: 5
+        },
+        {
+          date: '2026-06-18T10:00:00.000Z',
+          duration: 90,
+          mode: 'side-right',
+          pausedCount: 0,
+          pausedTime: 0
+        },
+        {
+          date: '2026-06-18T11:00:00.000Z',
+          duration: 120,
+          mode: 'classic',
+          pausedCount: 0,
+          pausedTime: 0
+        }
+      ];
+      window.app.renderHomeHistory();
+    });
+
+    await expect(page.locator('.home-history-item')).toHaveCount(3);
+    await expect(page.locator('.home-history-duration').first()).toHaveText('120秒');
+
+    await page.locator('#homeHistoryViewAll').click();
+    await expect(page.locator('#historyOverlay')).toHaveClass(/show/);
+    await page.screenshot({ path: 'test-results/screenshots/home-recent-training-list.png', fullPage: false });
   });
 
   test('preset buttons work', async ({ page }) => {

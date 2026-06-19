@@ -77,6 +77,12 @@ export default {
     perfect: 'Perfect',
     duration: 's'
   },
+  homeHistory: {
+    title: 'Recent Training',
+    viewAll: 'All',
+    empty: 'No training records',
+    perfect: 'Perfect'
+  },
   leaderboard: {
     title: 'Leaderboard',
     loginRequired: 'Sign in to view rankings',
@@ -90,7 +96,8 @@ export default {
     }
   },
   login: {
-    title: 'Sign in to view rankings',
+    title: 'Sign In / Sign Up',
+    registerTitle: 'Create Account',
     register: 'Sign Up',
     signIn: 'Sign In',
     loading: 'Please wait...',
@@ -121,6 +128,7 @@ export default {
     reminders: 'Training Reminders',
     reminderEnabled: 'Daily Reminder',
     account: 'Account',
+    login: 'Sign In / Sign Up',
     logout: 'Sign Out',
     nickname: 'Set Nickname',
     sessions: 'Sessions',
